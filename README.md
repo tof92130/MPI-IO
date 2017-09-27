@@ -2,11 +2,11 @@
 
 compilation:
 
-mpif90 write.90 -o write
-mpif90 read.90  -o read
+mpif90 -O3 write.f90 -o write
+mpif90 -O3 read.f90  -o read
 
-mpiifort write.90 -o write
-mpiifort read.90  -o read
+mpiifort -O3 write.90 -o write
+mpiifort -O3 read.90  -o read
 
 execution
 mpirun -n 10 ./write
