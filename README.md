@@ -9,5 +9,5 @@ mpiifort -O3 write.90 -o write
 mpiifort -O3 read.90  -o read
 
 execution
-mpirun -n 10 ./write
+mpirun -n  6 ./write
 mpirun -n  4 ./read
