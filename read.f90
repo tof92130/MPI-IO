@@ -1,24 +1,25 @@
 program read_at
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  use iso_fortran_env
   use mpi
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   implicit none
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  integer                  :: statut(mpi_status_size)
-  integer                  :: requete
-  integer                  :: rank,comm
-  integer                  :: iRank,sizeMPI
-  integer                  :: iErr, unit
+  integer(int32)           :: statut(mpi_status_size)
+  integer(int32)           :: requete
+  integer(int32)           :: rank,comm
+  integer(int32)           :: iRank,sizeMPI
+  integer(int32)           :: iErr, unit
   integer(MPI_OFFSET_KIND) :: offset
   integer(MPI_OFFSET_KIND) :: file_size
-  integer                  :: int_size
+  integer(int32)           :: int_size
   logical                  :: termine
-  integer                  :: dim,dimGlob 
-  integer                  :: n0,n1
-  integer, pointer         :: valeurs(:)
-  integer, pointer         :: dimRank(:)
+  integer(int32)           :: dim,dimGlob 
+  integer(int32)           :: n0,n1
+  integer(int32), pointer  :: valeurs(:)
+  integer(int32), pointer  :: dimRank(:)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

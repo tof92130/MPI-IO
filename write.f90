@@ -1,5 +1,6 @@
 program write_at
-  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  use iso_fortran_env
   use mpi
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -7,14 +8,14 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  integer                  :: dim,dimGlob
-  integer, pointer         :: dimRank(:)
-  integer                  :: i,rank,unit,iErr,int_size,file_size
-  integer                  :: iRank,sizeMPI
+  integer(int32)           :: dim,dimGlob
+  integer(int32), pointer  :: dimRank(:)
+  integer(int32)           :: i,rank,unit,iErr,int_size,file_size
+  integer(int32)           :: iRank,sizeMPI
   integer(MPI_OFFSET_KIND) :: offset
-  integer, pointer         :: valeurs(:)
-  integer                  :: statut(MPI_STATUS_SIZE)
-  integer                  :: comm
+  integer(int32), pointer  :: valeurs(:)
+  integer(int32)           :: statut(MPI_STATUS_SIZE)
+  integer(int32)           :: comm
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
