@@ -1,5 +1,6 @@
 program read_at
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  use iso_c_binding, only: c_loc,C_NEW_LINE
   use iso_fortran_env
   use mpi
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -7,19 +8,22 @@ program read_at
   implicit none
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  integer(int32)           :: statut(mpi_status_size)
-  integer(int32)           :: requete
-  integer(int32)           :: rank,comm
-  integer(int32)           :: iRank,sizeMPI
-  integer(int32)           :: iErr, unit
-  integer(MPI_OFFSET_KIND) :: offset
-  integer(MPI_OFFSET_KIND) :: file_size
-  integer(int32)           :: int_size
-  logical                  :: termine
-  integer(int32)           :: dim,dimGlob 
-  integer(int32)           :: n0,n1
-  integer(int32), pointer  :: valeurs(:)
-  integer(int32), pointer  :: dimRank(:)
+  integer(int32)             :: statut(mpi_status_size)
+  integer(int32)             :: requete
+  integer(int32)             :: rank,comm
+  integer(int32)             :: iRank,sizeMPI
+  integer(int32)             :: iErr, unit
+  integer(MPI_OFFSET_KIND)   :: offset
+  integer(MPI_OFFSET_KIND)   :: file_size
+  integer(int32)             :: char_size,int_size
+  logical                    :: termine
+  integer(int32)             :: dim,dimGlob 
+  integer(int32)             :: n0,n1
+  integer(int32)  , pointer  :: valeurs(:)
+  integer(int32)  , pointer  :: dimRank(:)
+  character(len=:), pointer  :: header=>null()
+  character(1)               :: lf
+  integer(int32)             :: nRead
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -36,6 +40,22 @@ program read_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  allocate(character(len=64) :: header)
+  lf=C_NEW_LINE
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  call mpi_type_size(mpi_character, char_size, ierr)
+  call mpi_type_size(MPI_INTEGER,int_size,iErr)
+
+  if( rank==0 )then
+    print '(/"char_size (octets)=",i1)',char_size
+    print '( "int_size  (octets)=",i1)',int_size
+  endif
+  call mpi_barrier(comm,iErr)
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> ouverture du fichier "donnees.dat" en lecture
   call mpi_file_open(  &
   &    comm           ,&
@@ -46,20 +66,11 @@ program read_at
   &    iErr            )
   
   !> Verification ouverture du fichier
-  if ( .not.iErr== mpi_success )then
+  if ( .not.iErr==mpi_success )then
      print *, 'attention erreur lors ouverture du fichier'
      call mpi_abort(mpi_comm_world, 2, iErr)
      call mpi_finalize(iErr)
   end if
-  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  
-  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  call mpi_type_size(MPI_INTEGER,int_size,iErr)
-  if( rank==0 )then
-    print '()'
-    print '("Taille entier en octets=",i10)',int_size
-  endif
-  call mpi_barrier(comm,iErr)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -71,21 +82,28 @@ program read_at
   call mpi_barrier(comm,iErr)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !> Lecture de dimGlob
-  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
   offset=0
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-  call MPI_FILE_READ_ALL( &
-  &    unit              ,&
-  &    dimGlob           ,& !> variable
-  &    1                 ,& !> dimension
-  &    MPI_INTEGER       ,& !> type
-  &    statut            ,&
-  &    iErr               )
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  ! Lire un bloc de données
+  call mpi_file_read_at( &
+  &    unit             ,&
+  &    offset           ,&
+  &    header           ,&
+  &    len(header)      ,&
+  &    MPI_CHARACTER    ,&
+  &    statut           ,&
+  &    ierr              )
   
-  offset=offset+int_size !> lecture d'un entier uniquement
+  read(header(5:63), '(i10)') dimGlob  ! debut en position 5
+
+  offset=offset+len(trim(header))*char_size ! Décalage
+  call mpi_barrier(comm,ierr)
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
   do iRank=0,sizeMPI-1
     if( iRank==0.and.rank==0    )print '()'
     if( iRank==rank )then
@@ -108,7 +126,6 @@ program read_at
     endif
     call mpi_barrier(comm,iErr)
   enddo
-  
   
   allocate(dimRank(0:sizeMPI-1))
   call mpi_allgather(                 &
@@ -153,6 +170,19 @@ program read_at
     &    statut            ,&
     &    iErr               )
     
+    do iRank=0,sizeMPI-1
+      call mpi_test(requete,termine,statut,iErr)
+      if( iRank==0.and.rank==0    )print '()'
+      if( iRank==rank )then
+        if( termine )then
+          print '("rank ",i3," mpi_test lecture terminee")',rank
+        else
+          print '("rank ",i3," mpi_test lecture en cours")',rank
+        endif
+      endif
+      call mpi_barrier(comm,iErr)
+    enddo
+    
   else
     
     call MPI_FILE_IREAD_AT( & !> lecture non blocante
@@ -163,7 +193,7 @@ program read_at
     &    MPI_INTEGER       ,&
     &    requete           ,&
     &    iErr               )
-        
+    
     do iRank=0,sizeMPI-1
       call mpi_test(requete,termine,statut,iErr)
       if( iRank==0.and.rank==0    )print '()'
