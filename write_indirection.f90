@@ -1,155 +1,7 @@
-module mpiio
-  use iso_fortran_env
-  use mpi
-  implicit none
-  
-  public :: mpiio_open_write
-  public :: mpiio_close
-contains
-
-  function mpiio_open_write(comm,unit,name) result(iErr)
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    integer(int32), intent(in)  :: comm
-    integer(int32), intent(out) :: unit
-    character(*)  , intent(in)  :: name
-    !>
-    integer(int32)              :: iErr
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_FILE_OPEN(                    &
-    &    comm                             ,&
-    &    name                             ,&
-    &    MPI_MODE_CREATE + MPI_MODE_WRONLY,&
-    &    MPI_INFO_NULL                    ,&
-    &    unit                             ,&
-    &    iErr                              )
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    return
-  end function mpiio_open_write 
-  
-  function     mpiio_close(unit) result(iErr)
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    integer(int32), intent(inout) :: unit
-    integer(int32)                :: iErr
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_FILE_CLOSE(unit, iErr)
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    return
-  end function mpiio_close
-  
-  function     mpiio_write_with_indices(comm, unit, offset, indices, data ) result(iErr)
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    integer(int32)          , intent(in)    :: comm
-    integer(int32)          , intent(inout) :: unit
-    integer(MPI_OFFSET_KIND), intent(inout) :: offset
-    integer(int32)          , intent(in)    :: indices(:)
-    integer(int32)          , intent(in)    :: data   (:)
-    !>
-    integer(int32)                          :: dim, dimGlob
-    integer(int32)                          :: filetype
-    integer(int32)                          :: iErr
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    dim=size(indices)
-
-    call mpi_allreduce(dim,dimGlob,1,mpi_integer,mpi_sum,comm,ierr)  
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_TYPE_CREATE_INDEXED_Block( &
-    &    dim                           ,&
-    &    1                             ,&
-    &    indices-1                     ,& ! int32
-    &    MPI_INTEGER                   ,&
-    &    filetype                      ,&
-    &    iErr                           )
-    
-    !call MPI_TYPE_CREATE_HINDEXED_Block(       &
-    !&    dim                                  ,&
-    !&    1                                    ,&
-    !&    int((indices-1)*int_size,kind=int64) ,& ! int64
-    !&    MPI_INTEGER                          ,&
-    !&    filetype                             ,&
-    !&    iErr                                  )
-  
-    !block 
-    !  integer, pointer :: blocklengths (:)
-    !  
-    !  allocate(blocklengths(1:dim))
-    !  blocklengths(1:dim)=1
-    !  
-    !  call MPI_TYPE_INDEXED( &
-    !  &    dim              ,&
-    !  &    blocklengths     ,&
-    !  &    indices-1        ,& ! int32
-    !  &    MPI_INTEGER      ,&
-    !  &    filetype         ,&
-    !  &    iErr              )
-    !  
-    !  deallocate(blocklengths)
-    !end block
-    
-    !block 
-    !  integer(int32)  , pointer :: blocklengths (:)
-    !  !integer(int64)  , pointer :: displacements(:)
-    !  integer(MPI_ADDRESS_KIND), pointer :: displacements(:)
-    !
-    !  allocate(blocklengths(1:dim))
-    !  blocklengths(1:dim)=1
-    !  
-    !  allocate(displacements(1:dim))
-    !  displacements(1:dim)=[((indices(i)-1)*int_size ,i=1,dim)]
-    !  
-    !  call MPI_TYPE_CREATE_HINDEXED( &
-    !  &    dim                      ,&
-    !  &    blocklengths             ,&
-    !  &    displacements            ,& ! int64
-    !  &    MPI_INTEGER              ,&
-    !  &    filetype                 ,&
-    !  &    iErr                      )
-    !  
-    !  deallocate(blocklengths, displacements)
-    !end block
-    
-    call MPI_TYPE_COMMIT(filetype, iErr)
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    ! Définir la vue globale (chaque processus écrit dans sa position définie par indices)
-    call MPI_FILE_SET_VIEW(             &
-    &    unit                          ,&
-    &    offset                        ,& ! deplacement initial
-    &    MPI_INTEGER                   ,&
-    &    filetype                      ,&
-    &    "native"                      ,&
-    &    MPI_INFO_NULL                 ,&
-    &    iErr                           )
-    
-    ! Écriture collective
-    call MPI_FILE_WRITE_ALL(            &
-    &    unit                          ,&
-    &    data                          ,&
-    &    dim                           ,&
-    &    MPI_INTEGER                   ,&
-    &    MPI_STATUS_IGNORE             ,&
-    &    iErr                           )
-    
-    offset=offset+dimGlob* 4
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
-    
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
-    ! Libérer les types dérivés et la mémoire
-    call MPI_TYPE_FREE(filetype, iErr)
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
-    
-  end function mpiio_write_with_indices
-  
-end module mpiio
-
 
 program mpi_io_write_with_indices
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  use iso_c_binding, only: c_loc,C_NEW_LINE
+  use iso_c_binding, only: c_loc,C_NEW_LINE,c_ptr,c_null_char
   use iso_fortran_env
   use mpi
   use mpiio
@@ -223,7 +75,7 @@ program mpi_io_write_with_indices
     call mpi_barrier(comm,iErr)
   enddo
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
+  
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Ouvrir le fichier en mode collectif
   iErr=mpiio_open_write(comm=comm,name="donnees.dat",unit=unit)
@@ -235,15 +87,20 @@ program mpi_io_write_with_indices
   
   if( rank==0 )then
     print '(/"rank ",i3," ecrit dimGlob=",i10," avec un offset en octets= ",i10)',rank,dimGlob,offset
-    print '(a)',trim(header(1:63))
-    call mpi_file_write_at( &
-    &    unit              ,&
-    &    offset            ,&  !> on retrouve ici l'offset
-    &        trim(header)  ,&  !> le tableau à écrire     
-    &    len(trim(header)) ,&  !> le nombre d'éléments    
-    &    mpi_character     ,&  !> le type d'éléments      
-    &    statut            ,&
-    &    iErr               )
+    !print '(a)',trim(header(1:63))
+    
+    call mpi_file_write_at(     &
+    &    unit                  ,&
+    &    offset                ,&  !> on retrouve ici l'offset
+   !&    c_loc(header)         ,&  !> le tableau à écrire     
+   !&    len(header)*char_size ,&  !> le nombre d'éléments    
+   !&    mpi_byte              ,&  !> le type d'éléments      
+    &        header            ,&  !> le tableau à écrire     
+    &    len(header)           ,&  !> le nombre d'éléments    
+    &    mpi_character         ,&  !> le type d'éléments      
+    &    statut                ,&
+    &    iErr                   )
+    
   endif
   
   offset = len(header)*char_size
@@ -251,9 +108,11 @@ program mpi_io_write_with_indices
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  iErr=mpiio_write_with_indices(comm=comm, unit=unit, offset=offset, indices=indices, data=valeurs )
+  iErr=mpiio_write_cptr_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data=c_loc(valeurs), nBytes=int_size)
+  !iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data=c_loc(valeurs), nBytes=int_size)
+  !iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data=valeurs)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
+  
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
   ! Fermer le fichier
   iErr=mpiio_close(unit)

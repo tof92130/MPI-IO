@@ -1,10 +1,10 @@
 program read_with_header_integer
   implicit none
 
-  integer :: i, header_size, num_valeurs
+  integer           :: i, header_size, num_valeurs
   integer           :: dimGlob
   character(len=64) :: header
-  integer, dimension(:), allocatable :: valeurs
+  integer, allocatable :: valeurs(:)
   integer :: unit, file_size, valeurs_start
   
   ! Ouvrir le fichier en mode lecture
@@ -14,11 +14,9 @@ program read_with_header_integer
   header_size = 256  ! Ajustez cette valeur si nécessaire
   
   ! Lire le header
-  read(unit) header
+  read(unit) header ; print '("header: ",a)',header
   read(header(5:63), '(i10)') dimGlob  ! debut en position 5
   print '("dimGlob=",i3)',dimGlob
-
-  
   
   ! Déterminer la taille du fichier
   inquire(unit=unit, size=file_size)
