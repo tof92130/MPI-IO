@@ -85,31 +85,33 @@ program mpi_io_write_with_indices
   write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
   !write(header,'("dim=",i0,a)')dimGlob,lf
   
-  if( rank==0 )then
-    print '(/"rank ",i3," ecrit dimGlob=",i10," avec un offset en octets= ",i10)',rank,dimGlob,offset
-    !print '(a)',trim(header(1:63))
-    
-    call mpi_file_write_at(     &
-    &    unit                  ,&
-    &    offset                ,&  !> on retrouve ici l'offset
-   !&    c_loc(header)         ,&  !> le tableau à écrire     
-   !&    len(header)*char_size ,&  !> le nombre d'éléments    
-   !&    mpi_byte              ,&  !> le type d'éléments      
-    &        header            ,&  !> le tableau à écrire     
-    &    len(header)           ,&  !> le nombre d'éléments    
-    &    mpi_character         ,&  !> le type d'éléments      
-    &    statut                ,&
-    &    iErr                   )
-    
-  endif
-  
-  offset = len(header)*char_size
-  call mpi_barrier(comm,iErr)
+  !if( rank==0 )then
+  !  print '(/"rank ",i3," ecrit dimGlob=",i10," avec un offset en octets= ",i10)',rank,dimGlob,offset
+  !  !print '(a)',trim(header(1:63))
+  !  
+  !  call mpi_file_write_at(     &
+  !  &    unit                  ,&
+  !  &    offset                ,&  !> on retrouve ici l'offset
+  ! !&    c_loc(header)         ,&  !> le tableau à écrire     
+  ! !&    len(header)*char_size ,&  !> le nombre d'éléments    
+  ! !&    mpi_byte              ,&  !> le type d'éléments      
+  !  &        header            ,&  !> le tableau à écrire     
+  !  &    len(header)           ,&  !> le nombre d'éléments    
+  !  &    mpi_character         ,&  !> le type d'éléments      
+  !  &    statut                ,&
+  !  &    iErr                   )
+  !  
+  !endif
+  !
+  !offset = len(header)*char_size
+  !call mpi_barrier(comm,iErr)
+
+  iErr=mpiio_global_write_string(comm=comm, unit=unit, offset=offset, string=header)    
+ !iErr=mpiio_global_write_cptr  (comm=comm, unit=unit, offset=offset, data_cptr=c_loc(header), data_size=sizeof(header))
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  iErr=mpiio_write_cptr_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data=c_loc(valeurs), nBytes=int_size)
-  !iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data=c_loc(valeurs), nBytes=int_size)
+  iErr=mpiio_write_cptr_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data_cptr=c_loc(valeurs), data_size=sizeof(valeurs))
   !iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data=valeurs)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   

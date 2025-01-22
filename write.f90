@@ -35,8 +35,6 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  allocate(character(len=64) :: header)
-  lf=C_NEW_LINE
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -79,29 +77,20 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
-  !write(header,'("dim=",i0,a)')dimGlob,lf
+  allocate(character(len=64) :: header)
+  lf=C_NEW_LINE
+  write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf  
   
-  if( rank==0 )then
-    print '(/"rank ",i3," ecrit dimGlob=",i10," avec un offset en octets= ",i10)',rank,dimGlob,offset
-    print '(a)',trim(header(1:63))
-    call mpi_file_write_at( &
-    &    unit              ,&
-    &    offset            ,&  !> on retrouve ici l'offset
-    &        trim(header)  ,&  !> le tableau à écrire     
-    &    len(trim(header)) ,&  !> le nombre d'éléments    
-    &    mpi_character     ,&  !> le type d'éléments      
-    &    statut            ,&
-    &    iErr               )
-  endif
-  offset=offset+len(header)*char_size ! Décalage
-  call mpi_barrier(comm,ierr)
+  iErr=mpiio_global_write_string(comm=comm, unit=unit, offset=offset, string=header)    
+ !iErr=mpiio_global_write_cptr  (comm=comm, unit=unit, offset=offset, data_cptr=c_loc(header), data_size=sizeof(header))
+  
+  deallocate(header)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Ecriture des blocs de données
-  iErr=mpiio_write_int(comm=comm, unit=unit, offset=offset, data=valeurs)
-  !iErr=mpiio_write_cptr(comm=comm, unit=unit, offset=offset, data=c_loc(valeurs),nBytes=dim*int_size)  
+  iErr=mpiio_write_int (comm=comm, unit=unit, offset=offset, data=valeurs)
+ !iErr=mpiio_write_cptr(comm=comm, unit=unit, offset=offset, data_cptr=c_loc(valeurs), data_size=sizeof(valeurs))
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -109,7 +98,6 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  deallocate(header)
   deallocate(valeurs)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   

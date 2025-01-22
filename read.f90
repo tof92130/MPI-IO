@@ -3,6 +3,7 @@ program read_at
   use iso_c_binding, only: c_loc,C_NEW_LINE
   use iso_fortran_env
   use mpi
+  use mpiio
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   implicit none
@@ -57,20 +58,22 @@ program read_at
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> ouverture du fichier "donnees.dat" en lecture
-  call mpi_file_open(  &
-  &    comm           ,&
-  &    "donnees.dat"  ,&
-  &    MPI_MODE_RDONLY,&
-  &    mpi_info_null  ,&
-  &    unit           ,&
-  &    iErr            )
+  iErr=mpiio_open_read(comm=comm,unit=unit,name="donnees.dat")
   
-  !> Verification ouverture du fichier
-  if ( .not.iErr==mpi_success )then
-     print *, 'attention erreur lors ouverture du fichier'
-     call mpi_abort(mpi_comm_world, 2, iErr)
-     call mpi_finalize(iErr)
-  end if
+  !call mpi_file_open(  &
+  !&    comm           ,&
+  !&    "donnees.dat"  ,&
+  !&    MPI_MODE_RDONLY,&
+  !&    mpi_info_null  ,&
+  !&    unit           ,&
+  !&    iErr            )
+  !
+  !!> Verification ouverture du fichier
+  !if ( .not.iErr==mpi_success )then
+  !   print *, 'Erreur durant ouverture du fichier'
+  !   call mpi_abort(mpi_comm_world, 2, iErr)
+  !   call mpi_finalize(iErr)
+  !end if
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -223,9 +226,10 @@ program read_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  call mpi_file_close(    &
-  &    unit              ,&
-  &    iErr               )
+  !call mpi_file_close(    &
+  !&    unit              ,&
+  !&    iErr               )
+  iErr=mpiio_close(unit)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
