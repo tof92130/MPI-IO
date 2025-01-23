@@ -65,19 +65,19 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  block
-    integer(int32) :: i
-    character(48)  :: buffer(10)
-    do i=1,10
-      write(buffer(i),'("rank:",i3.3," ligne: ",i2.2)')rank,i
-    enddo
-    buffer(:)(48:48)=C_NEW_LINE
-    iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=buffer)    
-  end block
-
-  iErr=mpiio_close(unit)
-  call mpi_finalize(iErr)
-  stop
+  !block
+  !  integer(int32) :: i
+  !  character(48)  :: buffer(10)
+  !  do i=1,10
+  !    write(buffer(i),'("rank:",i3.3," ligne: ",i2.2)')rank,i
+  !  enddo
+  !  buffer(:)(48:48)=C_NEW_LINE
+  !  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=buffer)    
+  !end block
+  !
+  !iErr=mpiio_close(unit)
+  !call mpi_finalize(iErr)
+  !stop
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 

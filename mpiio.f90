@@ -166,14 +166,13 @@ contains
     integer(int32)                          :: iErr
     !>
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI,iRank
+    integer(int32)                          :: rankMPI
     integer(int32)                          :: iErr1
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Ecriture des blocs de données
     call mpi_comm_rank(comm,rankMPI,iErr1)
     
-
     if( rankMPI==0 )then
       !print '("string:         ",*(a,1x) )',    string(:)
       !print '("size(string):   ",i0)',size(string(:))
@@ -182,7 +181,7 @@ contains
       call mpi_file_write_at(       &
       &    unit                    ,&
       &    offset                  ,&  !> on retrouve ici l'offset
-      &    string                  ,&  !> le tableau à écrire     
+      &    string(:)               ,&  !> le tableau à écrire     
       &    len(string)*size(string),&  !> le nombre d'éléments    
       &    mpi_character           ,&  !> le type d'éléments      
       &    statut                  ,&
@@ -196,7 +195,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_global_write_string_tab
-
+  
   !function     mpiio_global_write_cptr(comm, unit, offset, data_cptr, data_size) result(iErr)
   !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !  integer(int32)          , intent(in)    :: comm
