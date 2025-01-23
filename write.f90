@@ -82,22 +82,22 @@ program write_at
   write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf  
   
   iErr=mpiio_global_write_string(comm=comm, unit=unit, offset=offset, string=header)    
- !iErr=mpiio_global_write_cptr  (comm=comm, unit=unit, offset=offset, data_cptr=c_loc(header), data_size=sizeof(header))
   
   deallocate(header)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Ecriture des blocs de données
-  iErr=mpiio_write_int (comm=comm, unit=unit, offset=offset, data=valeurs)
- !iErr=mpiio_write_cptr(comm=comm, unit=unit, offset=offset, data_cptr=c_loc(valeurs), data_size=sizeof(valeurs))
+  iErr=mpiio_write_block(comm=comm, unit=unit, offset=offset, data=valeurs)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Fermeture du fichier
   iErr=mpiio_close(unit)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Nettoyage mémoire
   deallocate(valeurs)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   

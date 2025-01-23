@@ -11,22 +11,14 @@ program mpi_io_write_with_indices
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   integer(int32)                     :: dim,dimGlob
-  integer(int32)           , pointer :: dimRank(:)
   integer(int32)                     :: i,rank,size,unit,iErr
-  integer(int32)                     :: char_size,int_size,file_size
+  integer(int32)                     :: aint_size,char_size,int_size,file_size
   integer(int32)                     :: iRank
   integer(MPI_OFFSET_KIND)           :: offset
-  integer(int32)                     :: filetype
-  integer(int32)                     :: statut(MPI_STATUS_SIZE)
   integer(int32)                     :: comm
   character(len=:)         , pointer :: header=>null()
   character(1)                       :: lf
-  integer(int32)           , pointer :: valeurs(:)
-  integer(int32)           , pointer :: indices(:)
-  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  
-  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  offset = 0
+  integer(int64)           , pointer :: indices(:)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -49,10 +41,16 @@ program mpi_io_write_with_indices
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   call mpi_type_size(mpi_character,char_size,iErr)
-  call mpi_type_size(mpi_integer  , int_size,iErr)
+  call mpi_type_size(mpi_integer  ,int_size ,iErr)
+  call mpi_type_size(mpi_aint     ,aint_size,iErr)
+  
   if( rank==0 )then
-    print '(/"char_size (octets)=",i1)',char_size
-    print '( "int_size  (octets)=",i1)',int_size
+    print '(/"char_size (octets)=",i0)',char_size
+    print '( "int32             =",i0)',int32       
+    print '( "int_size  (octets)=",i0)',int_size
+    print '( "int64             =",i0)',int64       
+    print '( "aint_size (octets)=",i0)',aint_size
+    print '( "MPI_OFFSET_KIND   =",i0)',MPI_OFFSET_KIND
   endif
   call mpi_barrier(comm,iErr)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -60,9 +58,7 @@ program mpi_io_write_with_indices
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Définition des données
   dim=1+rank
-  
   allocate(indices(1:dim)) ; indices(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
-  allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
   
   !> Calcul de dimGlob
   call mpi_allreduce(dim,dimGlob,1,mpi_integer,mpi_sum,comm,ierr)  
@@ -81,48 +77,63 @@ program mpi_io_write_with_indices
   iErr=mpiio_open_write(comm=comm,name="donnees.dat",unit=unit)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
-  !write(header,'("dim=",i0,a)')dimGlob,lf
-  
-  !if( rank==0 )then
-  !  print '(/"rank ",i3," ecrit dimGlob=",i10," avec un offset en octets= ",i10)',rank,dimGlob,offset
-  !  !print '(a)',trim(header(1:63))
-  !  
-  !  call mpi_file_write_at(     &
-  !  &    unit                  ,&
-  !  &    offset                ,&  !> on retrouve ici l'offset
-  ! !&    c_loc(header)         ,&  !> le tableau à écrire     
-  ! !&    len(header)*char_size ,&  !> le nombre d'éléments    
-  ! !&    mpi_byte              ,&  !> le type d'éléments      
-  !  &        header            ,&  !> le tableau à écrire     
-  !  &    len(header)           ,&  !> le nombre d'éléments    
-  !  &    mpi_character         ,&  !> le type d'éléments      
-  !  &    statut                ,&
-  !  &    iErr                   )
-  !  
-  !endif
-  !
-  !offset = len(header)*char_size
-  !call mpi_barrier(comm,iErr)
-
-  iErr=mpiio_global_write_string(comm=comm, unit=unit, offset=offset, string=header)    
- !iErr=mpiio_global_write_cptr  (comm=comm, unit=unit, offset=offset, data_cptr=c_loc(header), data_size=sizeof(header))
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
+  offset=0_MPI_OFFSET_KIND
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  iErr=mpiio_write_cptr_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data_cptr=c_loc(valeurs), data_size=sizeof(valeurs))
-  !iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, indx=indices, data=valeurs)
+  !> header
+  write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
+  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=header)
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Ecriture des données int32 indexées
+  !block
+  !  integer(int32), pointer :: valeurs(:)
+  !  allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+  !  
+  !  iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+  !
+  !  deallocate(valeurs)
+  !end block
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Ecriture des données real64 indexées
+  !block
+  !  real(real64), pointer :: valeurs(:)
+  !  allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+  !  
+  !  iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+  !  
+  !  deallocate(valeurs)
+  !end block
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Ecriture des données character indexées
+  block
+    character(80), pointer :: valeurs(:)
+    allocate(valeurs(1:dim))
+    do iRank=0,dim-1
+      write(valeurs(iRank+1),'("rank",i3.3," valeur=",i3.3,";"t79,a)')rank,1+ rank + size*iRank-iRank*(iRank+1)/2,lf
+    enddo
+    !if( rank==2 )print *,valeurs(:)
+    
+    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+    deallocate(valeurs)
+  end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
-  ! Fermer le fichier
+  !> Fermeture du fichier
   iErr=mpiio_close(unit)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
-
+  
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
-  ! Libérer les types dérivés et la mémoire
-  deallocate(valeurs, indices)
+  !> Nettoyage mémoire
+  deallocate(indices)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
