@@ -83,8 +83,8 @@ program mpi_io_write_with_indices
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> header
-  write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
-  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=header)
+  !write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
+  !iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=header)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -114,13 +114,20 @@ program mpi_io_write_with_indices
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Ecriture des données character indexées
   block
-    character(80), pointer :: valeurs(:)
+    integer(int32)          :: i
+    character(80) , pointer :: valeurs(:)
     allocate(valeurs(1:dim))
     do iRank=0,dim-1
-      write(valeurs(iRank+1),'("rank",i3.3," valeur=",i3.3,";"t79,a)')rank,1+ rank + size*iRank-iRank*(iRank+1)/2,lf
+      write(valeurs(iRank+1),'("rank",i3.3," valeur=",i3.3,";")')rank,1+ rank + size*iRank-iRank*(iRank+1)/2
+      !write(valeurs(iRank+1),'("rank",i3.3," valeur=",i3.3,t79,";")')rank,1+ rank + size*iRank-iRank*(iRank+1)/2
     enddo
     !if( rank==2 )print *,valeurs(:)
     
+    !do i=1,dim
+    !  valeurs(i)(80:80)=lf
+    !enddo
+    valeurs(:)(80:80)=lf
+
     iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
     deallocate(valeurs)
   end block
