@@ -14,7 +14,6 @@ program write_at
   integer(int32)             :: char_size,int_size,file_size
   integer(int32)             :: iRank,sizeMPI
   integer(MPI_OFFSET_KIND)   :: offset
-  integer(int32)  , pointer  :: valeurs(:)
   integer(int32)             :: statut(MPI_STATUS_SIZE)
   integer(int32)             :: comm
   character(len=:), pointer  :: header=>null()
@@ -35,6 +34,7 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  lf=C_NEW_LINE
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -49,19 +49,7 @@ program write_at
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   ! Définition des données
-  dim=1+rank
-  
-  allocate(valeurs(1:dim))  
-  valeurs(1:dim)=[(100*rank+iRank,iRank=1,dim)]  
-  !valeurs(1:dim)=[(1+ rank + sizeMPI*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
-  
-  do iRank=0,sizeMPI-1
-    if( iRank==0.and.rank==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
-    if( iRank==rank )then
-      print '("rank ",i3,2x,"dim=",i3,2x,"valeurs ",*(i4,1x))',rank,dim,valeurs(1:dim) !> format norme fortran 2008
-    endif
-    call mpi_barrier(comm,iErr)
-  enddo
+  dim=1+rank  
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -77,18 +65,99 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  block
+    integer(int32) :: i
+    character(48)  :: buffer(10)
+    do i=1,10
+      write(buffer(i),'("rank:",i3.3," ligne: ",i2.2)')rank,i
+    enddo
+    buffer(:)(48:48)=C_NEW_LINE
+    iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=buffer)    
+  end block
+
+  iErr=mpiio_close(unit)
+  call mpi_finalize(iErr)
+  stop
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   allocate(character(len=64) :: header)
   lf=C_NEW_LINE
   write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf  
   
-  iErr=mpiio_global_write_string(comm=comm, unit=unit, offset=offset, string=header)    
+  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=header)    
   
   deallocate(header)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !> Ecriture des blocs de données
-  iErr=mpiio_write_block(comm=comm, unit=unit, offset=offset, data=valeurs)
+  !> Ecriture des blocs de données int32
+  block
+    integer(int32)  , pointer  :: valeurs(:)
+    allocate(valeurs(1:dim))
+    valeurs(1:dim)=[(100*rank+iRank,iRank=1,dim)]  
+    
+    do iRank=0,sizeMPI-1
+      if( iRank==0.and.rank==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
+      if( iRank==rank )then
+        print '("rank ",i3,2x,"dim=",i3,2x,"valeurs ",*(i4,1x))',rank,dim,valeurs(1:dim) !> format norme fortran 2008
+      endif
+      call mpi_barrier(comm,iErr)
+    enddo
+    
+    iErr=mpiio_write_block(comm=comm, unit=unit, offset=offset, data=valeurs)
+    
+    deallocate(valeurs)
+  end block
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Ecriture des blocs de données real64
+  block
+    real(real64), pointer  :: valeurs(:)
+    allocate(valeurs(1:dim))
+    valeurs(1:dim)=[(100*rank+iRank,iRank=1,dim)]  
+    
+    do iRank=0,sizeMPI-1
+      if( iRank==0.and.rank==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
+      if( iRank==rank )then
+        print '("rank ",i3,2x,"dim=",i3,2x,"valeurs ",*(f4.0,1x))',rank,dim,valeurs(1:dim) !> format norme fortran 2008
+      endif
+      call mpi_barrier(comm,iErr)
+    enddo
+    
+    iErr=mpiio_write_block(comm=comm, unit=unit, offset=offset, data=valeurs)
+
+    deallocate(valeurs)
+  end block
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Ecriture des blocs de données string
+  block
+    integer(int32)           :: i
+    character(80) , pointer  :: valeurs(:)
+    allocate(valeurs(1:dim))    
+    do i=1,dim
+      write(valeurs(i),'("rank:",i3.3," valeurs=""",i3.3,"""")')rank,100*rank+i  
+    enddo
+    valeurs(:)(80:80)=lf
+    
+    do iRank=0,sizeMPI-1
+      if( iRank==0.and.rank==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
+      if( iRank==rank )then
+        do i=1,dim
+          print '(a)',valeurs(i)(1:79)
+        enddo
+      endif
+      call mpi_barrier(comm,iErr)
+    enddo
+    
+    iErr=mpiio_write_block(comm=comm, unit=unit, offset=offset, data=valeurs)
+  
+    deallocate(valeurs)
+  end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -98,7 +167,6 @@ program write_at
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Nettoyage mémoire
-  deallocate(valeurs)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

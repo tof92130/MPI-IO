@@ -30,7 +30,7 @@ program read_with_header_integer
     integer(int32), pointer :: valeurs(:)
     allocate(valeurs(dimGlob))
     read(unit)valeurs(1:dimGlob)
-    print '("valeurs ",*(i4,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
+    print '("valeurs ",*(i5,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -41,7 +41,7 @@ program read_with_header_integer
     real(real64), pointer :: valeurs(:)
     allocate(valeurs(1:dimGlob))
     read(unit)valeurs(1:dimGlob)
-    print '("valeurs ",*(f5.2,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
+    print '("valeurs ",*(f5.0,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -51,13 +51,12 @@ program read_with_header_integer
   block
     character(80), pointer :: valeurs(:)
     allocate(valeurs(1:dimGlob))
-    read(unit)valeurs(1)!:dimGlob)
-    print '("valeurs ",*(a,/))',valeurs(1)!:dimGlob) !> format norme fortran 2008
+    read(unit)valeurs(1:dimGlob)
+    print '("valeurs ",*(a,/))',valeurs(1:dimGlob) !> format norme fortran 2008
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Fermeture du fichier
   close(unit)
