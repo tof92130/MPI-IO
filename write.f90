@@ -101,7 +101,7 @@ program write_at
     do iRank=0,sizeMPI-1
       if( iRank==0.and.rank==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
       if( iRank==rank )then
-        print '("rank ",i3,2x,"dim=",i3,2x,"valeurs ",*(i4,1x))',rank,dim,valeurs(1:dim) !> format norme fortran 2008
+        print '("rank ",i3,2x,"dim=",i4,2x,"valeurs ",*(i4,1x))',rank,dim,valeurs(1:dim) !> format norme fortran 2008
       endif
       call mpi_barrier(comm,iErr)
     enddo
@@ -122,7 +122,7 @@ program write_at
     do iRank=0,sizeMPI-1
       if( iRank==0.and.rank==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
       if( iRank==rank )then
-        print '("rank ",i3,2x,"dim=",i3,2x,"valeurs ",*(f4.0,1x))',rank,dim,valeurs(1:dim) !> format norme fortran 2008
+        print '("rank ",i3,2x,"dim=",i4,2x,"valeurs ",*(f5.0,1x))',rank,dim,valeurs(1:dim) !> format norme fortran 2008
       endif
       call mpi_barrier(comm,iErr)
     enddo
@@ -140,7 +140,7 @@ program write_at
     character(80) , pointer  :: valeurs(:)
     allocate(valeurs(1:dim))    
     do i=1,dim
-      write(valeurs(i),'("rank:",i3.3," valeurs=""",i3.3,"""")')rank,100*rank+i  
+      write(valeurs(i),'("rank:",i3.3," valeurs=""",i5.5,"""")')rank,100*rank+i  
     enddo
     valeurs(:)(80:80)=lf
     

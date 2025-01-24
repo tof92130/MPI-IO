@@ -127,7 +127,7 @@ program mpi_io_write_with_indices
     character(80) , pointer :: valeurs(:)
     allocate(valeurs(1:dim))
     do iRank=0,dim-1
-      write(valeurs(iRank+1),'("rank",i3.3," valeur=""",i3.3,"""")')rank,1+ rank + size*iRank-iRank*(iRank+1)/2
+      write(valeurs(iRank+1),'("rank",i3.3," valeur=""",i5.5,"""")')rank,1+ rank + size*iRank-iRank*(iRank+1)/2
     enddo    
     valeurs(:)(80:80)=lf
     

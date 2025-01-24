@@ -20,7 +20,7 @@ program read_with_header_integer
     character(len=64) :: header
     read(unit) header ; print '("header: ",a)',header
     read(header(5:63), '(i10)') dimGlob  ! debut en position 5
-    print '("dimGlob=",i3)',dimGlob
+    print '("dimGlob=",i0)',dimGlob
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
@@ -30,7 +30,7 @@ program read_with_header_integer
     integer(int32), pointer :: valeurs(:)
     allocate(valeurs(dimGlob))
     read(unit)valeurs(1:dimGlob)
-    print '("valeurs ",*(i5,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
+    print '("valeurs ",*(i6,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -41,7 +41,7 @@ program read_with_header_integer
     real(real64), pointer :: valeurs(:)
     allocate(valeurs(1:dimGlob))
     read(unit)valeurs(1:dimGlob)
-    print '("valeurs ",*(f5.0,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
+    print '("valeurs ",*(f6.0,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
