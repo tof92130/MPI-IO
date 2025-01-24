@@ -25,3 +25,7 @@ mpirun -n  4 ./read
 
 
 xxd donnees.dat
+
+
+ mpirun --host localhost:32 -n 32 --bind-to none ./write_indirection
+ mpirun --host localhost:64 -n 64 --bind-to none ./read

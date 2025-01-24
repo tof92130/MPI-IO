@@ -1,6 +1,5 @@
 program read_at
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  use iso_c_binding, only: c_loc,C_NEW_LINE
   use iso_fortran_env
   use mpi
   use space_mpiio
@@ -21,7 +20,6 @@ program read_at
   integer(int32)             :: dim,dimGlob 
   integer(int32)             :: n0,n1
   character(len=:), pointer  :: header=>null()
-  character(1)               :: lf
   integer(int64)   , pointer :: indices(:)
   character(128)             :: buffer
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -41,7 +39,6 @@ program read_at
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   allocate(character(len=64) :: header)
-  lf=C_NEW_LINE
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
