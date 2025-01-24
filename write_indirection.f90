@@ -19,6 +19,7 @@ program mpi_io_write_with_indices
   character(len=:)         , pointer :: header=>null()
   character(1)                       :: lf
   integer(int64)           , pointer :: indices(:)
+  character(128)                     :: buffer
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -75,16 +76,18 @@ program mpi_io_write_with_indices
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Ouvrir le fichier en mode collectif
   iErr=mpiio_open_write(comm=comm,name="donnees.dat",unit=unit)
-  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  
-  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
   offset=0_MPI_OFFSET_KIND
+  
+  write(buffer,'("rank ",i3.3,1x,"octets ecrit: ",i0)')rank,offset
+  iErr=mpiio_message(comm=comm, buffer=buffer)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> header
   write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
   iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, data=header)
+  write(buffer,'("rank ",i3.3,1x,"octets ecrit: ",i0)')rank,offset
+  iErr=mpiio_message(comm=comm, buffer=buffer)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -92,11 +95,14 @@ program mpi_io_write_with_indices
   block
     integer(int32), pointer :: valeurs(:)
     allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
-    
+        
     iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
     !iErr=mpiio_write_with_indx_cptr(comm=comm, unit=unit, offset=offset, data_indx=indices, data_cptr=c_loc(valeurs), data_size=sizeof(valeurs))
     
     deallocate(valeurs)
+
+    write(buffer,'("rank ",i3.3,1x,"Ecriture des données int32 indexées",t100,"octets écrits: ",i0)')rank,offset
+    iErr=mpiio_message(comm=comm, buffer=buffer)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
@@ -109,6 +115,9 @@ program mpi_io_write_with_indices
     iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
     
     deallocate(valeurs)
+    
+    write(buffer,'("rank ",i3.3,1x,"Ecriture des données real64 indexées",t100,"octets écrits: ",i0)')rank,offset
+    iErr=mpiio_message(comm=comm, buffer=buffer)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
@@ -123,7 +132,11 @@ program mpi_io_write_with_indices
     valeurs(:)(80:80)=lf
     
     iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+    
     deallocate(valeurs)
+    
+    write(buffer,'("rank ",i3.3,1x,"Ecriture des données character indexées",t100,"octets écrits: ",i0)')rank,offset
+    iErr=mpiio_message(comm=comm, buffer=buffer)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
