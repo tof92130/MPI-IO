@@ -292,7 +292,7 @@ contains
     
     call mpi_bcast(data, len(data), mpi_type, 0, comm, ierr)
     
-    offset=offset+sizeof(data)  !*char_size=1 ! Décalage
+    offset=offset+len(data)  ! Décalage
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -708,7 +708,7 @@ contains
       &    iErr               )
     endif
     
-    offset=offset+sizeof(data)  !*char_size=1 ! Décalage
+    offset=offset+len(data)  !*char_size=1 ! Décalage
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -730,13 +730,13 @@ contains
     !> Ecriture des blocs de données
     call mpi_comm_rank(comm,rankMPI,iErr)
     
-    data_size=sizeof(data)
+    data_size=len(data)*size(data)
     if( rankMPI==0 )then
       !print '("data:         ",*(a,1x) )',    data(:)
       !print '("size(data):   ",i0)',size(data(:))
       !print '("len(data): ",i0)',len (data)
       !print '("mpiio_global_write_string_tab data_size: ",i0)',data_size
-
+      
       call mpi_file_write_at(       &
       &    unit                    ,&
       &    offset                  ,&  !> on retrouve ici l'offset
