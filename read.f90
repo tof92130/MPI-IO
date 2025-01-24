@@ -70,15 +70,12 @@ program read_at
   
   iErr=mpiio_global_read_string(comm=comm, unit=unit, offset=offset, data=header)    
   read(header(5:63), '(i10)') dimGlob  ! debut en position 5  
-  
-  write(buffer,'("rank ",i3.3,1x,"Lecture globale dimGlob=",i3)')rank,dimGlob
-  iErr=mpiio_message(comm=comm, buffer=trim(buffer))
-  
-  write(buffer,'("rank ",i3.3,1x,"Lecture globale ",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+    
+  write(buffer,'("rank ",i3.3,1x,"Lecture globale Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
   iErr=mpiio_message(comm=comm, buffer=buffer)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-  if( 0==0 )then ! lecture entrelacee
+  if( 0==1 )then ! lecture entrelacee
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Lecture avec index int32  
     block 
@@ -118,7 +115,7 @@ program read_at
       deallocate(indices)
       deallocate(valeurs)
      
-      write(buffer,'("rank ",i3.3,1x,"Lecture avec index int32  ",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+      write(buffer,'("rank ",i3.3,1x,"Lecture avec index int32 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
       iErr=mpiio_message(comm=comm, buffer=buffer)
     end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -135,14 +132,14 @@ program read_at
       
       deallocate(valeurs)  
       
-      write(buffer,'("rank ",i3.3,1x,"Lecture Block int32",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+      write(buffer,'("rank ",i3.3,1x,"Lecture Block int32 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
       iErr=mpiio_message(comm=comm, buffer=buffer)
     end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   endif
   
   
-  if( 0==1 )then ! lecture entrelacee
+  if( 0==0 )then ! lecture entrelacee
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Lecture avec index real64  
     block 
@@ -171,8 +168,8 @@ program read_at
       enddo
       deallocate(dimRank)
       
-      write(buffer,'("rank ",i3.3,1x,"index: ",*(i3,1x))')rank,indices(1:dim)
-      iErr=mpiio_message(comm=comm, buffer=buffer)  
+      !write(buffer,'("rank ",i3.3,1x,"index: ",*(i3,1x))')rank,indices(1:dim)
+      !iErr=mpiio_message(comm=comm, buffer=buffer)  
       
       iErr=mpiio_read_with_index(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
       
@@ -181,7 +178,7 @@ program read_at
       
       deallocate(indices)
       deallocate(valeurs)
-      write(buffer,'("rank ",i3.3,1x,"Lecture avec index real64",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+      write(buffer,'("rank ",i3.3,1x,"Lecture avec index real64 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
       iErr=mpiio_message(comm=comm, buffer=buffer)
     end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -200,7 +197,7 @@ program read_at
       deallocate(valeurs)
       !print *,offset,file_size
       
-      write(buffer,'("rank ",i3.3,1x,"Lecture Block real64  ",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+      write(buffer,'("rank ",i3.3,1x,"Lecture Block real64 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
       iErr=mpiio_message(comm=comm, buffer=buffer)
     end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -546,7 +546,6 @@ contains
     integer(int32)                          :: nBytes=0
     integer(int32)                          :: n0,n1,dim
     integer(int32)          , allocatable   :: dimRank(:)
-    integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: sizeMPI,rankMPI
     integer(int32)                          :: iErr
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -589,15 +588,26 @@ contains
     !  iErr=mpiio_message(comm=comm, buffer=buffer)  
     !end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Définir la vue globale (chaque processus écrit dans sa position définie par data_indx)
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "native"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
-    call mpi_file_read_at( &
-    &    unit             ,&
-    &    offset           ,&
-    &    data             ,&  !> le tableau à écrire     
-    &    dim              ,&  !> le nombre d'éléments    
-    &    mpi_type         ,&  !> le type d'éléments      
-    &    statut           ,&
-    &    iErr              )  
+    !> Écriture collective
+    call MPI_FILE_read_ALL(             &
+    &    unit                          ,&
+    &    data                          ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     offset=offset+sum(dimRank(rankMPI:sizeMPI-1))
@@ -663,21 +673,27 @@ contains
     !  iErr=mpiio_message(comm=comm, buffer=buffer)  
     !end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
-    call mpi_file_read_at( &
-    &    unit             ,&
-    &    offset           ,&
-    &    data             ,&  !> le tableau à écrire     
-    &    dim              ,&  !> le nombre d'éléments    
-    &    mpi_type         ,&  !> le type d'éléments      
-    &    statut           ,&
-    &    iErr              )  
     
-    if( .not.iErr==mpi_success )then
-      print '("Erreur mpiio_read_block_real64")'
-      call mpi_abort(mpi_comm_world, 2, iErr)
-      call mpi_finalize(iErr)
-    endif
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Définir la vue globale (chaque processus écrit dans sa position définie par data_indx)
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "native"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    !> Écriture collective
+    call MPI_FILE_read_ALL(             &
+    &    unit                          ,&
+    &    data                          ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     offset=offset+sum(dimRank(rankMPI:sizeMPI-1))
