@@ -72,7 +72,7 @@ program write_at
   !    write(buffer(i),'("rank:",i3.3," ligne: ",i2.2)')rank,i
   !  enddo
   !  buffer(:)(48:48)=C_NEW_LINE
-  !  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=buffer)    
+  !  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, data=buffer)    
   !end block
   !
   !iErr=mpiio_close(unit)
@@ -86,7 +86,7 @@ program write_at
   lf=C_NEW_LINE
   write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf  
   
-  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=header)    
+  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, data=header)    
   
   deallocate(header)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

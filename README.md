@@ -23,3 +23,5 @@ mpirun -n  6 ./write_indirection
 mpirun -n  4 ./read
 ./read_sequentiel
 
+
+xxd donnees.dat

@@ -84,7 +84,7 @@ program mpi_io_write_with_indices
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> header
   write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
-  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, string=header)
+  iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, data=header)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
