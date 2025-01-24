@@ -17,9 +17,11 @@
 
 !>  function mpiio_read_with_indx_int32      (comm, unit, offset, data_indx, data)                result(iErr)
 !>  function mpiio_read_with_indx_real64     (comm, unit, offset, data_indx, data)                result(iErr)
+!>  function mpiio_read_with_indx_complex128 (comm, unit, offset, data_indx, data)                result(iErr)
 
 !>  function mpiio_read_block_int32          (comm, unit, offset, data)                           result(iErr)
 !>  function mpiio_read_block_real64         (comm, unit, offset, data)                           result(iErr)
+!>  function mpiio_read_block_complex128     (comm, unit, dimGlob, offset, data)                  result(iErr)
 
 !>  function mpiio_global_write_string       (comm, unit, offset, data)                            result(iErr)
 !>  function mpiio_global_write_string_tab   (comm, unit, offset, data)                            result(iErr)
@@ -39,6 +41,7 @@
 !>  function mpiio_write_block_int32         (comm, unit, offset,            data)                  result(iErr)
 !>  function mpiio_write_block_int64         (comm, unit, offset,            data)                  result(iErr)
 !>  function mpiio_write_block_real64        (comm, unit, offset,            data)                  result(iErr)
+!>  function mpiio_write_block_complex128    (comm, unit, offset,            data)                  result(iErr)
 !x  function mpiio_write_cptr                (comm, unit, offset, data_cptr, data_size)             result(iErr)
 
 module space_mpiio
@@ -79,6 +82,7 @@ module space_mpiio
   interface          mpiio_read_with_index            ! 
     module procedure mpiio_read_with_indx_int32
     module procedure mpiio_read_with_indx_real64  
+    module procedure mpiio_read_with_indx_complex128
   end interface
   public :: mpiio_read_with_index
   
@@ -86,6 +90,7 @@ module space_mpiio
     module procedure mpiio_read_block_int32
    !module procedure mpiio_read_block_int64
     module procedure mpiio_read_block_real64
+    module procedure mpiio_read_block_complex128
   end interface
   public :: mpiio_read_block
     
@@ -128,6 +133,7 @@ module space_mpiio
     module procedure mpiio_write_block_int32
     module procedure mpiio_write_block_int64
     module procedure mpiio_write_block_real64
+    module procedure mpiio_write_block_complex128
   end interface
   public :: mpiio_write_block
   
@@ -455,7 +461,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_read_with_indx_int32
-
+  
   function     mpiio_read_with_indx_real64(comm, unit, offset, data_indx, data) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
@@ -531,6 +537,82 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_read_with_indx_real64
+  
+  function     mpiio_read_with_indx_complex128(comm, unit, offset, data_indx, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    integer(int32)          , intent(in)    :: comm
+    integer(int32)          , intent(inout) :: unit
+    integer(MPI_OFFSET_KIND), intent(inout) :: offset
+    integer(int64)          , intent(in)    :: data_indx(:)
+    complex(real64)         , pointer       :: data     (:)
+    !>
+    integer(MPI_OFFSET_KIND), pointer       :: disp_indx(:)
+    integer(int32)                          :: nBytes=0
+    integer(int32)                          :: dim
+    integer(int64)                          :: dimGlob
+    integer(int32)                          :: mpi_type
+    integer(int32)                          :: mpi_new_type
+    integer(int32)                          :: iErr
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    mpi_type=mpi_complex8                      !> <==
+    dim=size(data_indx)
+    allocate(data(1:dim))
+    if( .not.dim==0 )nBytes=sizeof(data(1))
+    
+    allocate(disp_indx(1:dim))
+    disp_indx(1:dim)=nBytes*(data_indx(1:dim)-1)
+
+    !block
+    !  character(128) :: buffer
+    !  write(buffer,'("mpiio_read_with_indx_complex128 nBytes=",i3,3x,"dim=",i3)')nBytes,dim
+    !  iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !end block
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    call MPI_TYPE_CREATE_HINDEXED_BLOCK( & !> version octets ppour avoir des indx en int64
+    &    dim                            ,&
+    &    1                              ,& !> blocklength
+    &    disp_indx                      ,& !> array_of_displacements en octets
+    &    mpi_type                       ,& !> Old type
+    &    mpi_new_type                   ,& !> New type
+    &    iErr                            )
+    
+    call MPI_TYPE_COMMIT(mpi_new_type, iErr)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Définir la vue globale (chaque processus écrit dans sa position définie par data_indx)
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_new_type                  ,& !> New type
+    &    "native"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> Écriture collective
+    call MPI_FILE_read_ALL(             &
+    &    unit                          ,&
+    &    data                          ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      
+    !> Libérer le type dérivé et la mémoire
+    call MPI_TYPE_FREE(mpi_new_type, iErr)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      
+    call mpi_allreduce(int(dim,kind=int64),dimGlob,1,mpi_integer8,mpi_sum,comm,ierr)  
+    offset=offset+dimGlob*nBytes
+    
+    deallocate(disp_indx)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    return
+  end function mpiio_read_with_indx_complex128
   !<<<         mpiio_read_with_index
   
   !>>>         mpiio_read_block
@@ -703,11 +785,96 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_read_block_real64
+  
+  function     mpiio_read_block_complex128(comm, unit, dimGlob, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    integer(int32)          , intent(in)    :: comm
+    integer(int32)          , intent(in)    :: unit
+    integer(int32)          , intent(in)    :: dimGlob
+    integer(MPI_OFFSET_KIND), intent(inout) :: offset
+    complex(real64)         , pointer       :: data(:) !>  <==
+    !>
+    integer(int32)                          :: mpi_type
+    integer(int32)                          :: nBytes=0
+    integer(int32)                          :: n0,n1,dim
+    integer(int32)          , allocatable   :: dimRank(:)
+    integer(int32)                          :: statut(MPI_STATUS_SIZE)
+    integer(int32)                          :: sizeMPI,rankMPI
+    integer(int32)                          :: iErr
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    mpi_type=mpi_complex8                      !>  <==
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    !> Ecriture des blocs de données
+    call mpi_comm_size(comm,sizeMPI,iErr)
+    call mpi_comm_rank(comm,rankMPI,iErr)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
+    n0= rankMPI   *dimGlob/sizeMPI+1
+    n1=(rankMPI+1)*dimGlob/sizeMPI    
+    dim=n1-n0+1
+    
+    block
+      character(128) :: buffer
+      write(buffer,'("rank ",i3.3,1x,"mpiio_read_block_complex128: n0=",i3,2x,"n1=",i3,3x,"dim=",i3)')rankMPI,n0,n1,dim
+      iErr=mpiio_message(comm=comm, buffer=buffer)  
+    end block
+        
+    allocate(data(1:dim))
+    nBytes=sizeof(data(1))
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
+    allocate(dimRank(0:sizeMPI-1))
+    
+    call mpi_allgather(           &
+    &    dim*nBytes,1,mpi_integer,&
+    &    dimRank(0),1,mpi_integer,&
+    &    comm                    ,&
+    &    iErr                     )
+    
+    offset=offset+sum(dimRank(0:rankMPI-1))
+    
+    !block
+    !  character(128) :: buffer
+    !  write(buffer,'("rank ",i3.3,1x,"mpiio_read_block_complex128: offset=",i0)')rankMPI,offset
+    !  iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !end block
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Définir la vue globale (chaque processus écrit dans sa position définie par data_indx)
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "native"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    !> Écriture collective
+    call MPI_FILE_read_ALL(             &
+    &    unit                          ,&
+    &    data                          ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    offset=offset+sum(dimRank(rankMPI:sizeMPI-1))
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    deallocate(dimRank)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    return
+  end function mpiio_read_block_complex128
+  !<<<         mpiio_read_block
 
-  !<<< mpiio_read_block
 
-
-  !>>> mpiio_global_write
+  !>>>         mpiio_global_write
   function     mpiio_global_write_string(comm, unit, offset, data) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
