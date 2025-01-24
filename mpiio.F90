@@ -627,7 +627,7 @@ contains
     
     block
       character(128) :: buffer
-      write(buffer,'("rank ",i3.3,1x,"n0=",i3,2x,"n1=",i3,3x,"dim=",i3)')rankMPI,n0,n1,dim
+      write(buffer,'("rank ",i3.3,1x,"mpiio_read_block_real64: n0=",i3,2x,"n1=",i3,3x,"dim=",i3)')rankMPI,n0,n1,dim
       iErr=mpiio_message(comm=comm, buffer=buffer)  
     end block
         
@@ -647,7 +647,7 @@ contains
     
     block
       character(128) :: buffer
-      write(buffer,'("rank ",i3.3,1x,"mpiio_read_block_real64 offset=",i0)')rankMPI,offset
+      write(buffer,'("rank ",i3.3,1x,"mpiio_read_block_real64: offset=",i0)')rankMPI,offset
       iErr=mpiio_message(comm=comm, buffer=buffer)  
     end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -660,6 +660,12 @@ contains
     &    mpi_type         ,&  !> le type d'éléments      
     &    statut           ,&
     &    iErr              )  
+    
+    if( .not.iErr==mpi_success )then
+      print '("Erreur mpiio_read_block_real64")'
+      call mpi_abort(mpi_comm_world, 2, iErr)
+      call mpi_finalize(iErr)
+    endif
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     offset=offset+sum(dimRank(rankMPI:sizeMPI-1))
@@ -815,7 +821,6 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_global_write_int64
-
 
   !function     mpiio_global_write_cptr(comm, unit, offset, data_cptr, data_size) result(iErr)
   !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
