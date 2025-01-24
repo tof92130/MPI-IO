@@ -3,7 +3,7 @@ program write_at
   use iso_c_binding, only: c_loc,C_NEW_LINE
   use iso_fortran_env
   use mpi
-  use mpiio
+  use space_mpiio
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   implicit none

@@ -4,7 +4,7 @@ program mpi_io_write_with_indices
   use iso_c_binding, only: c_loc,C_NEW_LINE,c_ptr,c_null_char
   use iso_fortran_env
   use mpi
-  use mpiio
+  use space_mpiio
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   implicit none
@@ -128,7 +128,7 @@ program mpi_io_write_with_indices
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
   !> Fermeture du fichier
-  iErr=mpiio_close(unit)
+  iErr=mpiio_close(unit=unit)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  

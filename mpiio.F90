@@ -5,34 +5,38 @@
 !> Copyright (c) 1995-2025 ONERA/DAAA. All rights reserved.
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-!>  function     mpiio_open_read             (comm,unit,name)                                      result(iErr)
-!>  function     mpiio_open_write            (comm,unit,name)                                      result(iErr)
-!>  function     mpiio_close                      (unit)                                           result(iErr)
+!>  function mpiio_open_read              (comm,unit,name)                                      result(iErr)
+!>  function mpiio_open_write             (comm,unit,name)                                      result(iErr)
+!>  function mpiio_close                       (unit)                                           result(iErr)
 
-!>  function     mpiio_global_write_string   (comm, unit, offset, string)                          result(iErr)
-!>  function     mpiio_global_write_int32    (comm, unit, offset, string)                          result(iErr)
-!>  function     mpiio_global_write_int64    (comm, unit, offset, string)                          result(iErr)
-!>  function     mpiio_global_write_real64   (comm, unit, offset, string)                          result(iErr)
-!x  function     mpiio_global_write_cptr     (comm, unit, offset, data_cptr, data_size)            result(iErr)
+!>  function mpiio_global_write_string    (comm, unit, offset, string)                          result(iErr)
+!>  function mpiio_global_write_string_tab(comm, unit, offset, string)                          result(iErr)
+!>  function mpiio_global_write_int32     (comm, unit, offset, string)                          result(iErr)
+!>  function mpiio_global_write_int64     (comm, unit, offset, string)                          result(iErr)
+!>  function mpiio_global_write_real64    (comm, unit, offset, string)                          result(iErr)
+!x  function mpiio_global_write_cptr      (comm, unit, offset, data_cptr, data_size)            result(iErr)
 
-!>  function     mpiio_write_with_indx_string(comm, unit, offset, data_indx, data)                 result(iErr)
-!>  function     mpiio_write_with_indx_int32 (comm, unit, offset, data_indx, data)                 result(iErr)
-!>  function     mpiio_write_with_indx_int64 (comm, unit, offset, data_indx, data)                 result(iErr)
-!>  function     mpiio_write_with_indx_real64(comm, unit, offset, data_indx, data)                 result(iErr)
-!x  function     mpiio_write_with_indx_cptr  (comm, unit, offset, data_indx, data_cptr, data_size) result(iErr)
+!>  function mpiio_write_with_indx_string (comm, unit, offset, data_indx, data)                 result(iErr)
+!>  function mpiio_write_with_indx_int32  (comm, unit, offset, data_indx, data)                 result(iErr)
+!>  function mpiio_write_with_indx_int64  (comm, unit, offset, data_indx, data)                 result(iErr)
+!>  function mpiio_write_with_indx_real64 (comm, unit, offset, data_indx, data)                 result(iErr)
+!x  function mpiio_write_with_indx_cptr   (comm, unit, offset, data_indx, data_cptr, data_size) result(iErr)
 
-!>  function     mpiio_write_block_int32             (comm, unit, offset,            data)                 result(iErr)
-!x  function     mpiio_write_cptr(comm, unit, offset, data_cptr, data_size) result(iErr)
+!>  function mpiio_write_block_string     (comm, unit, offset,            data)                  result(iErr)
+!>  function mpiio_write_block_int32      (comm, unit, offset,            data)                  result(iErr)
+!>  function mpiio_write_block_int64      (comm, unit, offset,            data)                  result(iErr)
+!>  function mpiio_write_block_real64     (comm, unit, offset,            data)                  result(iErr)
+!x  function mpiio_write_cptr             (comm, unit, offset, data_cptr, data_size)             result(iErr)
 
-module mpiio
+module space_mpiio
   use iso_fortran_env
-  use iso_c_binding, only: c_ptr
+  !use iso_c_binding, only: c_ptr
   use mpi
   implicit none
   
   public :: mpiio_open_read,mpiio_open_write,mpiio_close
   
-  interface          mpiio_global_write
+  interface          mpiio_global_write          ! PDM_io_global_write
     module procedure mpiio_global_write_string
     module procedure mpiio_global_write_string_tab      
   end interface
@@ -46,7 +50,7 @@ module mpiio
   end interface
   public :: mpiio_write_with_indx
   
-  interface          mpiio_write_block
+  interface          mpiio_write_block            ! PDM_io_par_block_write
     module procedure mpiio_write_block_string
     module procedure mpiio_write_block_int32
     module procedure mpiio_write_block_int64
@@ -75,12 +79,11 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     if( .not.iErr==mpi_success )then
-      print *, 'Erreur durant ouverture du fichier'
+      print *, 'Erreur mpiio_open_read'
       call mpi_abort(mpi_comm_world, 2, iErr)
       call mpi_finalize(iErr)
     endif
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
     return
   end function mpiio_open_read 
   
@@ -102,11 +105,18 @@ contains
     &    iErr                              )    
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call mpi_file_set_size(unit, 0_8, ierr)  ! Réinitialiser la taille du fichier à 0
+    if( .not.iErr==mpi_success )then
+      print *, 'Erreur mpiio_open_write'
+      call mpi_abort(mpi_comm_world, 2, iErr)
+      call mpi_finalize(iErr)
+    endif
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    call mpi_file_set_size(unit, 0_8, ierr)    ! Réinitialiser la taille du fichier à 0
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_open_write 
-  
+    
   function     mpiio_close(unit) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(inout) :: unit
@@ -114,6 +124,13 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     call MPI_FILE_CLOSE(unit, iErr)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    if( .not.iErr==mpi_success )then
+      print *, 'Erreur mpiio_close'
+      call mpi_abort(mpi_comm_world, 2, iErr)
+      call mpi_finalize(iErr)
+    endif
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_close
@@ -130,11 +147,10 @@ contains
     !>
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: rankMPI,iRank
-    integer(int32)                          :: iErr1
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Ecriture des blocs de données
-    call mpi_comm_rank(comm,rankMPI,iErr1)
+    call mpi_comm_rank(comm,rankMPI,iErr)
     
     if( rankMPI==0 )then
       !print '("string:      ",a )',    string
@@ -149,9 +165,7 @@ contains
       &    iErr               )
     endif
     
-    call MPI_BCAST(iErr,1,MPI_INTEGER,0,comm,ierr1)
-    
-    offset=offset+len(string)  !*char_size=1 ! Décalage
+    offset=offset+sizeof(string)  !*char_size=1 ! Décalage
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -165,33 +179,34 @@ contains
     character(*)            , intent(in)    :: string(:)
     integer(int32)                          :: iErr
     !>
+    integer(int32)                          :: sizeofstring                
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: rankMPI
-    integer(int32)                          :: iErr1
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Ecriture des blocs de données
-    call mpi_comm_rank(comm,rankMPI,iErr1)
+    call mpi_comm_rank(comm,rankMPI,iErr)
     
+    sizeofstring=sizeof(string)
     if( rankMPI==0 )then
       !print '("string:         ",*(a,1x) )',    string(:)
       !print '("size(string):   ",i0)',size(string(:))
       !print '("len(string): ",i0)',len (string)
       
+      print '("mpiio_global_write_string_tab sizeofstring: ",i0)',sizeofstring
       call mpi_file_write_at(       &
       &    unit                    ,&
       &    offset                  ,&  !> on retrouve ici l'offset
       &    string(:)               ,&  !> le tableau à écrire     
-      &    len(string)*size(string),&  !> le nombre d'éléments    
+      &    sizeofstring            ,&  !> le nombre d'éléments    
       &    mpi_character           ,&  !> le type d'éléments      
       &    statut                  ,&
-      &    ierr1                    )
+      &    ierr                     )
       
-      offset=offset+len(string)*size(string)  !*char_size=1 ! Décalage
     endif
+    offset=offset+sizeofstring  !*char_size=1 ! Décalage
     
-    call MPI_BCAST(ierr1,1,MPI_INTEGER,0,comm,ierr)
-    call mpi_barrier(comm,ierr1)
+    call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_global_write_string_tab
@@ -256,7 +271,8 @@ contains
     mpi_type=mpi_character                    !> <=
     dim=size(data_indx)
     if( .not.dim==0 )nBytes=sizeof(data(1)) ! print '("nBytes=",i0)',nBytes
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<    
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     call mpi_type_create_hindexed_block( & !> version octets ppour avoir des indx en int64
     &    dim                            ,&
     &    nBytes                         ,& !> blocklength
@@ -286,7 +302,7 @@ contains
     &    dim*nBytes                    ,& !> dimension
     &    mpi_type                      ,& !> Old type
     &    MPI_STATUS_IGNORE             ,&
-    &    iErr                           )    
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      
     !> Libérer le type dérivé et la mémoire
@@ -794,58 +810,58 @@ contains
     return
   end function mpiio_write_block_real64
 
-  function     mpiio_write_cptr(comm, unit, offset, data_cptr, data_size) result(iErr)
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    integer(int32)          , intent(in)    :: comm
-    integer(int32)          , intent(inout) :: unit
-    integer(MPI_OFFSET_KIND), intent(inout) :: offset
-    type(c_ptr)             , intent(in)    :: data_cptr(:)
-    integer(int64)          , intent(in)    :: data_size
-    !>
-    integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: sizeMPI,rankMPI,iRank
-    integer(int64)          , pointer       :: data_size_Rank(:)
-    integer(int32)                          :: mpi_new_type
-    integer(int32)                          :: iErr
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Ecriture des blocs de données
-    call mpi_comm_size(comm,sizeMPI,iErr)
-    call mpi_comm_rank(comm,rankMPI,iErr)
-    
-    allocate(data_size_Rank(0:sizeMPI-1))
-    
-    call mpi_allgather(                   &
-    &    data_size        ,1,mpi_integer8,&
-    &    data_size_Rank(0),1,mpi_integer8,&
-    &    comm                            ,&
-    &    iErr                             )
-    
-    do iRank=0,rankMPI-1
-      offset=offset+data_size_Rank(iRank)
-    enddo
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
-    call MPI_FILE_write_at_ALL(     &  !> Colleltives
-    &    unit                      ,&
-    &    offset                    ,&  !> on retrouve ici l'offset
-    &    data_cptr                 ,&  !> le tableau à écrire     
-    &    int(data_size,kind=int32) ,&  !> le nombre d'éléments    
-    &    MPI_BYTE                  ,&  !> le type d'éléments      
-    &    statut                    ,&
-    &    iErr                       )
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    do iRank=rankMPI,sizeMPI-1
-      offset=offset+data_size_Rank(iRank)
-    enddo
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    deallocate(data_size_Rank)
-    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    !<<< mpiio_write_block
-
-    return
-  end function mpiio_write_cptr
+  !function     mpiio_write_cptr(comm, unit, offset, data_cptr, data_size) result(iErr)
+  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !  integer(int32)          , intent(in)    :: comm
+  !  integer(int32)          , intent(inout) :: unit
+  !  integer(MPI_OFFSET_KIND), intent(inout) :: offset
+  !  type(c_ptr)             , intent(in)    :: data_cptr(:)
+  !  integer(int64)          , intent(in)    :: data_size
+  !  !>
+  !  integer(int32)                          :: statut(MPI_STATUS_SIZE)
+  !  integer(int32)                          :: sizeMPI,rankMPI,iRank
+  !  integer(int64)          , pointer       :: data_size_Rank(:)
+  !  integer(int32)                          :: mpi_new_type
+  !  integer(int32)                          :: iErr
+  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !  !> Ecriture des blocs de données
+  !  call mpi_comm_size(comm,sizeMPI,iErr)
+  !  call mpi_comm_rank(comm,rankMPI,iErr)
+  !  
+  !  allocate(data_size_Rank(0:sizeMPI-1))
+  !  
+  !  call mpi_allgather(                   &
+  !  &    data_size        ,1,mpi_integer8,&
+  !  &    data_size_Rank(0),1,mpi_integer8,&
+  !  &    comm                            ,&
+  !  &    iErr                             )
+  !  
+  !  do iRank=0,rankMPI-1
+  !    offset=offset+data_size_Rank(iRank)
+  !  enddo
+  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+  !  call MPI_FILE_write_at_ALL(     &  !> Colleltives
+  !  &    unit                      ,&
+  !  &    offset                    ,&  !> on retrouve ici l'offset
+  !  &    data_cptr                 ,&  !> le tableau à écrire     
+  !  &    int(data_size,kind=int32) ,&  !> le nombre d'éléments    
+  !  &    MPI_BYTE                  ,&  !> le type d'éléments      
+  !  &    statut                    ,&
+  !  &    iErr                       )
+  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !  do iRank=rankMPI,sizeMPI-1
+  !    offset=offset+data_size_Rank(iRank)
+  !  enddo
+  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !  deallocate(data_size_Rank)
+  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  !  !<<< mpiio_write_block
+  !
+  !  return
+  !end function mpiio_write_cptr
   
-end module mpiio
+end module space_mpiio
