@@ -9,21 +9,21 @@ program read_at
   implicit none
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  integer(int32)             :: statut(mpi_status_size)
-  integer(int32)             :: requete
+  !integer(int32)             :: statut(mpi_status_size)
+  !integer(int32)             :: requete
   integer(int32)             :: rank,comm
   integer(int32)             :: iRank,sizeMPI
   integer(int32)             :: iErr, unit
   integer(MPI_OFFSET_KIND)   :: offset
   integer(MPI_OFFSET_KIND)   :: file_size
   integer(int32)             :: char_size,int_size
-  logical                    :: termine
+  !logical                    :: termine
   integer(int32)             :: dim,dimGlob 
   integer(int32)             :: n0,n1
   character(len=:), pointer  :: header=>null()
   character(1)               :: lf
   integer(int64)   , pointer :: indices(:)
-  character(120)             :: buffer
+  character(128)             :: buffer
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -78,14 +78,13 @@ program read_at
   iErr=mpiio_message(comm=comm, buffer=buffer)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-  
   if( 0==0 )then ! lecture entrelacee
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Lecture avec index int32  
     block 
       integer(int32), pointer :: dimRank(:)
       integer(int32), pointer :: valeurs(:)
-      integer(int32)          :: i,idx,jRank
+      integer(int32)          :: i,idx
       
       n0= rank   *dimGlob/sizeMPI+1
       n1=(rank+1)*dimGlob/sizeMPI
@@ -108,12 +107,12 @@ program read_at
       enddo
       deallocate(dimRank)
       
-      write(buffer,'("rank ",i3.3,1x,"indices: ",*(i2,1x))')rank,indices(1:dim)
+      write(buffer,'("rank ",i3.3,1x,"indices: ",*(i3,1x))')rank,indices(1:dim)
       iErr=mpiio_message(comm=comm, buffer=buffer)  
       
       iErr=mpiio_read_with_index(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
       
-      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(i2,1x))')rank,valeurs(:)
+      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(i3,1x))')rank,valeurs(:)
       iErr=mpiio_message(comm=comm, buffer=buffer)  
       
       deallocate(indices)
@@ -131,7 +130,7 @@ program read_at
       
       iErr=mpiio_read_block(comm=comm, unit=unit, dimGlob=dimGlob, offset=offset, data=valeurs)
       
-      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(i2,1x))')rank,valeurs(:)
+      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(i3,1x))')rank,valeurs(:)
       iErr=mpiio_message(comm=comm, buffer=buffer)
       
       deallocate(valeurs)  
@@ -172,7 +171,7 @@ program read_at
       enddo
       deallocate(dimRank)
       
-      write(buffer,'("rank ",i3.3,1x,"indices: ",*(i2,1x))')rank,indices(1:dim)
+      write(buffer,'("rank ",i3.3,1x,"index: ",*(i3,1x))')rank,indices(1:dim)
       iErr=mpiio_message(comm=comm, buffer=buffer)  
       
       iErr=mpiio_read_with_index(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
@@ -182,7 +181,6 @@ program read_at
       
       deallocate(indices)
       deallocate(valeurs)
-      
       write(buffer,'("rank ",i3.3,1x,"Lecture avec index real64",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
       iErr=mpiio_message(comm=comm, buffer=buffer)
     end block
@@ -195,10 +193,12 @@ program read_at
       
       iErr=mpiio_read_block(comm=comm, unit=unit, dimGlob=dimGlob, offset=offset, data=valeurs)
       
-      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(f4.0,1x))')rank,valeurs(:)
+      !print *,rank,valeurs(:)
+      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(f5.0,1x))')rank,valeurs(:)
       iErr=mpiio_message(comm=comm, buffer=buffer)  
       
       deallocate(valeurs)
+      !print *,offset,file_size
       
       write(buffer,'("rank ",i3.3,1x,"Lecture Block real64  ",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
       iErr=mpiio_message(comm=comm, buffer=buffer)

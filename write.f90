@@ -10,11 +10,11 @@ program write_at
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   integer(int32)             :: dim,dimGlob
-  integer(int32)             :: i,rank,unit,iErr
-  integer(int32)             :: char_size,int_size,file_size
+  integer(int32)             :: rank,unit,iErr
+  integer(int32)             :: char_size,int_size
   integer(int32)             :: iRank,sizeMPI
   integer(MPI_OFFSET_KIND)   :: offset
-  integer(int32)             :: statut(MPI_STATUS_SIZE)
+  !integer(int32)             :: statut(MPI_STATUS_SIZE)
   integer(int32)             :: comm
   character(len=:), pointer  :: header=>null()
   character(1)               :: lf

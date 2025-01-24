@@ -11,8 +11,8 @@ program mpi_io_write_with_indices
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   integer(int32)                     :: dim,dimGlob
-  integer(int32)                     :: i,rank,size,unit,iErr
-  integer(int32)                     :: aint_size,char_size,int_size,file_size
+  integer(int32)                     :: rank,size,unit,iErr
+  integer(int32)                     :: aint_size,char_size,int_size
   integer(int32)                     :: iRank
   integer(MPI_OFFSET_KIND)           :: offset
   integer(int32)                     :: comm

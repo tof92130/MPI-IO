@@ -19,6 +19,7 @@
 !>  function mpiio_read_with_indx_real64     (comm, unit, offset, data_indx, data)                result(iErr)
 
 !>  function mpiio_read_block_int32          (comm, unit, offset, data)                           result(iErr)
+!>  function mpiio_read_block_real64         (comm, unit, offset, data)                           result(iErr)
 
 !>  function mpiio_global_write_string       (comm, unit, offset, data)                            result(iErr)
 !>  function mpiio_global_write_string_tab   (comm, unit, offset, data)                            result(iErr)
@@ -268,7 +269,7 @@ contains
     !>
     integer(int32)                          :: mpi_type
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI,iRank
+    integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     mpi_type=mpi_character                     !>  <==
@@ -308,7 +309,7 @@ contains
     !>
     integer(int32)                          :: mpi_type
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI,iRank
+    integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     mpi_type=mpi_integer                       !>  <==
@@ -348,7 +349,7 @@ contains
     !>
     integer(int32)                          :: mpi_type
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI,iRank
+    integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     mpi_type=mpi_integer8                      !>  <==
@@ -388,6 +389,7 @@ contains
     integer(int64)          , intent(in)    :: data_indx(:)
     integer(int32)          , pointer       :: data     (:)
     !>
+    integer(int64), pointer       :: disp_indx(:)
     integer(int32)                          :: nBytes=0
     integer(int32)                          :: dim
     integer(int64)                          :: dimGlob
@@ -400,7 +402,9 @@ contains
     dim=size(data_indx)
     allocate(data(1:dim))
     if( .not.dim==0 )nBytes=sizeof(data(1))
-    
+
+    allocate(disp_indx(1:dim))
+    disp_indx=nBytes*(data_indx(1:dim)-1)
     !block
     !  character(128) :: buffer
     !  write(buffer,'("mpiio_read_with_indx_int32 nBytes=",i3,3x,"dim=",i3)')nBytes,dim
@@ -411,7 +415,7 @@ contains
     call MPI_TYPE_CREATE_HINDEXED_BLOCK( & !> version octets ppour avoir des indx en int64
     &    dim                            ,&
     &    1                              ,& !> blocklength
-    &    nBytes*(data_indx-1)           ,& !> array_of_displacements en octets
+    &    disp_indx                      ,& !> array_of_displacements en octets
     &    mpi_type                       ,& !> Old type
     &    mpi_new_type                   ,& !> New type
     &    iErr                            )
@@ -446,6 +450,8 @@ contains
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      
     call mpi_allreduce(int(dim,kind=int64),dimGlob,1,mpi_integer8,mpi_sum,comm,ierr)  
     offset=offset+dimGlob*nBytes
+
+    deallocate(disp_indx)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_read_with_indx_int32
@@ -458,6 +464,7 @@ contains
     integer(int64)          , intent(in)    :: data_indx(:)
     real(real64)            , pointer       :: data     (:)
     !>
+    integer(MPI_OFFSET_KIND), pointer       :: disp_indx(:)
     integer(int32)                          :: nBytes=0
     integer(int32)                          :: dim
     integer(int64)                          :: dimGlob
@@ -471,6 +478,9 @@ contains
     allocate(data(1:dim))
     if( .not.dim==0 )nBytes=sizeof(data(1))
     
+    allocate(disp_indx(1:dim))
+    disp_indx(1:dim)=nBytes*(data_indx(1:dim)-1)
+
     !block
     !  character(128) :: buffer
     !  write(buffer,'("mpiio_read_with_indx_int32 nBytes=",i3,3x,"dim=",i3)')nBytes,dim
@@ -481,7 +491,7 @@ contains
     call MPI_TYPE_CREATE_HINDEXED_BLOCK( & !> version octets ppour avoir des indx en int64
     &    dim                            ,&
     &    1                              ,& !> blocklength
-    &    nBytes*(data_indx-1)           ,& !> array_of_displacements en octets
+    &    disp_indx                      ,& !> array_of_displacements en octets
     &    mpi_type                       ,& !> Old type
     &    mpi_new_type                   ,& !> New type
     &    iErr                            )
@@ -516,6 +526,8 @@ contains
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      
     call mpi_allreduce(int(dim,kind=int64),dimGlob,1,mpi_integer8,mpi_sum,comm,ierr)  
     offset=offset+dimGlob*nBytes
+    
+    deallocate(disp_indx)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_read_with_indx_real64
@@ -535,7 +547,7 @@ contains
     integer(int32)                          :: n0,n1,dim
     integer(int32)          , allocatable   :: dimRank(:)
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: sizeMPI,rankMPI,iRank
+    integer(int32)                          :: sizeMPI,rankMPI
     integer(int32)                          :: iErr
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
@@ -609,7 +621,7 @@ contains
     integer(int32)                          :: n0,n1,dim
     integer(int32)          , allocatable   :: dimRank(:)
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: sizeMPI,rankMPI,iRank
+    integer(int32)                          :: sizeMPI,rankMPI
     integer(int32)                          :: iErr
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
@@ -645,11 +657,11 @@ contains
     
     offset=offset+sum(dimRank(0:rankMPI-1))
     
-    block
-      character(128) :: buffer
-      write(buffer,'("rank ",i3.3,1x,"mpiio_read_block_real64: offset=",i0)')rankMPI,offset
-      iErr=mpiio_message(comm=comm, buffer=buffer)  
-    end block
+    !block
+    !  character(128) :: buffer
+    !  write(buffer,'("rank ",i3.3,1x,"mpiio_read_block_real64: offset=",i0)')rankMPI,offset
+    !  iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     call mpi_file_read_at( &
@@ -689,7 +701,7 @@ contains
     integer(int32)                          :: iErr
     !>
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI,iRank
+    integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Ecriture des blocs de données
@@ -763,7 +775,7 @@ contains
     integer(int32)                          :: iErr
     !>
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI,iRank
+    integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Ecriture des blocs de données
@@ -797,7 +809,7 @@ contains
     integer(int32)                          :: iErr
     !>
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI,iRank
+    integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Ecriture des blocs de données
