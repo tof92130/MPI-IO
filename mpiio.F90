@@ -50,7 +50,7 @@ module space_mpiio
   use mpi
   implicit none
   
-  ! ecriture en big_endian call MPI_FILE_SET_VIEW(fh, 0_8, MPI_CHARACTER, filetype, 'big_endian', MPI_INFO_NULL, ierr)
+  ! ecriture en native call MPI_FILE_SET_VIEW(fh, 0_8, MPI_CHARACTER, filetype, 'native', MPI_INFO_NULL, ierr)
   
   !call PDM_io_open(                    &
   !&    nom=trim(name)                ,& !> nom       <-- Nom du fichier
@@ -291,7 +291,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -339,7 +339,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -382,7 +382,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -454,7 +454,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -530,7 +530,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -606,7 +606,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -696,7 +696,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -781,8 +781,8 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
-    !    "big_endian"                  ,&
+    &    "native"                      ,&
+    !    "native"                  ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -868,7 +868,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -923,9 +923,13 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                  ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
+    
+    if( .not.iErr==mpi_success )then
+      stop "Format binaire non supporté"
+    endif
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
     !> Écriture collective
@@ -975,7 +979,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1026,7 +1030,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1077,7 +1081,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1177,7 +1181,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1239,7 +1243,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1301,7 +1305,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1363,8 +1367,8 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
-    !    "big_endian"                  ,&
+    &    "native"                      ,&
+    !    "native"                  ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1426,7 +1430,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1493,7 +1497,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> new type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     
@@ -1564,7 +1568,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1632,7 +1636,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1702,7 +1706,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1772,8 +1776,8 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
-    !    "big_endian"                  ,&
+    &    "native"                      ,&
+    !    "native"                  ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1843,7 +1847,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "big_endian"                      ,&
+    &    "native"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
