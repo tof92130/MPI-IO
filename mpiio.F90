@@ -311,8 +311,9 @@ contains
     !  iErr=mpiio_message(comm=comm, buffer=buffer)  
     !end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
-    offset=offset+len(data)  ! Décalage
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> offset  
+    offset=offset+dim  ! Décalage
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -782,7 +783,6 @@ contains
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
     &    "native"                      ,&
-    !    "native"                  ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -957,7 +957,7 @@ contains
     integer(int32)                          :: iErr
     !>
     integer(int32)                          :: mpi_type
-    integer(int32)                          :: data_size                
+    integer(int32)                          :: data_size0,data_size                
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -965,9 +965,10 @@ contains
     !> Ecriture des blocs de données
     mpi_type=mpi_character                      !>  <==
     
+    data_size0=len(data)*size(data)
     call mpi_comm_rank(comm,rankMPI,iErr)
     if( rankMPI==0 )then
-      data_size=len(data)*size(data)
+      data_size=data_size0
     else
       data_size=0
     endif
@@ -994,7 +995,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Offset
-    offset=offset+data_size    
+    offset=offset+data_size0 
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -1266,7 +1267,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_write_with_indx_int32
-
+  
   function     mpiio_write_with_indx_int64(comm, unit, offset, data_indx, data) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
@@ -1367,7 +1368,6 @@ contains
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
     &    "native"                      ,&
-    !    "native"                  ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
