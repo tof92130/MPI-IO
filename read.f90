@@ -65,14 +65,15 @@ program read_at
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Lecture globale
   
-  iErr=mpiio_global_read_string(comm=comm, unit=unit, offset=offset, data=header)    
+  iErr=mpiio_global_read_string(comm=comm, unit=unit, offset=offset, data=header)
+  print *,rank,"header:",header
   read(header(5:63), '(i10)') dimGlob  ! debut en position 5  
-    
+  
   write(buffer,'("rank ",i3.3,1x,"Lecture globale Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
   iErr=mpiio_message(comm=comm, buffer=buffer)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-  if( 0==1 )then ! lecture entrelacee
+  if( 0==1 )then !> lecture entrelacee
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Lecture avec index int32  
     block 

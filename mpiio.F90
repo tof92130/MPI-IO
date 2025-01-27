@@ -93,7 +93,7 @@ module space_mpiio
     module procedure mpiio_read_block_complex128
   end interface
   public :: mpiio_read_block
-    
+  
   interface          mpiio_global_write          ! PDM_io_global_write
     module procedure mpiio_global_write_string
     module procedure mpiio_global_write_string_tab      
@@ -117,7 +117,6 @@ module space_mpiio
     module procedure mpiio_write_with_indx_complex128
   end interface
   public :: mpiio_write_with_indx
-  
   
   !call PDM_io_par_block_write(      &
   !&    id                          ,& ! unite
@@ -163,7 +162,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     allocate( character(len=length) :: cTab0(1:sizeMPI) )
-        
+    
     call mpi_gather(                      &
     &    buffer   , length, mpi_character,&
     &    cTab0(1) , length, mpi_character,&
@@ -186,8 +185,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<    
     return
   end function mpiio_message
-
-
+  
   function     mpiio_open_read(comm,unit,name) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(in)  :: comm
@@ -244,7 +242,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_open_write 
-    
+  
   function     mpiio_close(unit) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(inout) :: unit
@@ -273,32 +271,47 @@ contains
     character(*)            , intent(in)    :: data
     integer(int32)                          :: iErr
     !>
+    integer(int32)                          :: dim
     integer(int32)                          :: mpi_type
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
-    integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     mpi_type=mpi_character                     !>  <==
+    dim=len(data)
+    
+    !block
+    !  character(128) :: buffer
+    !  write(buffer,'("mpiio_global_read_string len(data)=",i3)')len(data)
+    !  iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Ecriture des blocs de données
-    call mpi_comm_rank(comm,rankMPI,iErr)
+    call mpi_file_set_view(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    mpi_info_null                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> lecture collective
+    call mpi_file_read_all(             &
+    &    unit                          ,&
+    &    data                          ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
     
-    if( rankMPI==0 )then
-      !print '("data:      ",a )',    data
-      !print '("len(data): ",i0)',len(data)
-      call mpi_file_read_at( &
-      &    unit             ,&
-      &    offset           ,&
-      &    data             ,&  !> le tableau à écrire     
-      &    len(data)        ,&  !> le nombre d'éléments    
-      &    mpi_type         ,&  !> le type d'éléments      
-      &    statut           ,&
-      &    iErr              )        
-    endif
-    
-    call mpi_bcast(data, len(data), mpi_type, 0, comm, ierr)
-    
+    !block
+    !  character(128) :: buffer
+    !  write(buffer,'("mpiio_global_read_string data: ",a)')data
+    !  iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !end block
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     offset=offset+len(data)  ! Décalage
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -321,25 +334,28 @@ contains
     mpi_type=mpi_integer                       !>  <==
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Ecriture des blocs de données
-    call mpi_comm_rank(comm,rankMPI,iErr)
-    
-    if( rankMPI==0 )then
-      !print '("data:      ",a )',    data
-      !print '("len(data): ",i0)',len(data)
-      call mpi_file_read_at( &
-      &    unit             ,&
-      &    offset           ,&
-      &    data             ,&  !> le tableau à écrire     
-      &    1                ,&  !> le nombre d'éléments    
-      &    mpi_type         ,&  !> le type d'éléments      
-      &    statut           ,&
-      &    iErr              )        
-    endif
-    
-    call mpi_bcast(data, 1, mpi_type, 0, comm, ierr)
-    
-    offset=offset+sizeof(data)  !*char_size=1 ! Décalage
+    call mpi_file_set_view(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    mpi_info_null                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> lecture collective
+    call mpi_file_read_all(             &
+    &    unit                          ,&
+    &    data                          ,&
+    &    1                             ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> offset
+    offset=offset+sizeof(data)
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -361,25 +377,28 @@ contains
     mpi_type=mpi_integer8                      !>  <==
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Ecriture des blocs de données
-    call mpi_comm_rank(comm,rankMPI,iErr)
-    
-    if( rankMPI==0 )then
-      !print '("data:      ",a )',    data
-      !print '("len(data): ",i0)',len(data)
-      call mpi_file_read_at( &
-      &    unit             ,&
-      &    offset           ,&
-      &    data             ,&  !> le tableau à écrire     
-      &    1                ,&  !> le nombre d'éléments    
-      &    mpi_type         ,&  !> le type d'éléments      
-      &    statut           ,&
-      &    iErr              )        
-    endif
-    
-    call mpi_bcast(data, 1, mpi_type, 0, comm, ierr)
-    
-    offset=offset+sizeof(data)  !*char_size=1 ! Décalage
+    call mpi_file_set_view(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    mpi_info_null                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> lecture collective
+    call mpi_file_read_all(             &
+    &    unit                          ,&
+    &    data                          ,&
+    &    1                             ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<     
+    !> offset
+    offset=offset+sizeof(data)
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -395,7 +414,7 @@ contains
     integer(int64)          , intent(in)    :: data_indx(:)
     integer(int32)          , pointer       :: data     (:)
     !>
-    integer(int64), pointer       :: disp_indx(:)
+    integer(int64)          , pointer       :: disp_indx(:)
     integer(int32)                          :: nBytes=0
     integer(int32)                          :: dim
     integer(int64)                          :: dimGlob
@@ -435,7 +454,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -511,7 +530,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -587,7 +606,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -677,7 +696,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -755,7 +774,6 @@ contains
     !  iErr=mpiio_message(comm=comm, buffer=buffer)  
     !end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Définir la vue globale (chaque processus écrit dans sa position définie par data_indx)
     call MPI_FILE_SET_VIEW(             &
@@ -763,7 +781,8 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
+    !    "big_endian"                  ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -849,7 +868,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -883,26 +902,43 @@ contains
     character(*)            , intent(in)    :: data
     integer(int32)                          :: iErr
     !>
+    integer(int32)                          :: mpi_type
+    integer(int32)                          :: dim
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Ecriture des blocs de données
-    call mpi_comm_rank(comm,rankMPI,iErr)
+    mpi_type=mpi_character                      !>  <==
     
+    call mpi_comm_rank(comm,rankMPI,iErr)    
     if( rankMPI==0 )then
-      !print '("string:      ",a )',    string
-      !print '("len(string): ",i0)',len(string)
-      call mpi_file_write_at( &
-      &    unit              ,&
-      &    offset            ,&  !> on retrouve ici l'offset
-      &    data              ,&  !> le tableau à écrire     
-      &    len(data)         ,&  !> le nombre d'éléments    
-      &    mpi_character     ,&  !> le type d'éléments      
-      &    statut            ,&
-      &    iErr               )
+      dim=len(data)
+    else
+      dim=0
     endif
-    
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    call mpi_file_set_view(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    mpi_info_null                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data(:)                       ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Offset    
     offset=offset+len(data)  !*char_size=1 ! Décalage
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -917,33 +953,45 @@ contains
     character(*)            , intent(in)    :: data(:)
     integer(int32)                          :: iErr
     !>
+    integer(int32)                          :: mpi_type
     integer(int32)                          :: data_size                
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Ecriture des blocs de données
+    mpi_type=mpi_character                      !>  <==
+    
     call mpi_comm_rank(comm,rankMPI,iErr)
-    
-    data_size=len(data)*size(data)
     if( rankMPI==0 )then
-      !print '("data:         ",*(a,1x) )',    data(:)
-      !print '("size(data):   ",i0)',size(data(:))
-      !print '("len(data): ",i0)',len (data)
-      !print '("mpiio_global_write_string_tab data_size: ",i0)',data_size
-      
-      call mpi_file_write_at(       &
-      &    unit                    ,&
-      &    offset                  ,&  !> on retrouve ici l'offset
-      &    data(:)                 ,&  !> le tableau à écrire     
-      &    data_size               ,&  !> le nombre d'éléments    
-      &    mpi_character           ,&  !> le type d'éléments      
-      &    statut                  ,&
-      &    ierr                     )
-      
+      data_size=len(data)*size(data)
+    else
+      data_size=0
     endif
-    offset=offset+data_size  !*char_size=1 ! Décalage
-    
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    call mpi_file_set_view(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    mpi_info_null                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data(:)                       ,&
+    &    data_size                     ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Offset
+    offset=offset+data_size    
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -957,27 +1005,44 @@ contains
     integer(int32)          , intent(in)    :: data
     integer(int32)                          :: iErr
     !>
+    integer(int32)                          :: dim
+    integer(int32)                          :: mpi_type
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Ecriture des blocs de données
+    mpi_type=mpi_integer                       !>  <==
+    
     call mpi_comm_rank(comm,rankMPI,iErr)
-    
     if( rankMPI==0 )then
-      !print '("string:      ",a )',    string
-      !print '("len(string): ",i0)',len(string)
-      call mpi_file_write_at( &
-      &    unit              ,&
-      &    offset            ,&  !> on retrouve ici l'offset
-      &    data              ,&  !> le tableau à écrire     
-      &    1                 ,&  !> le nombre d'éléments    
-      &    mpi_integer       ,&  !> le type d'éléments      
-      &    statut            ,&
-      &    iErr               )
+      dim=1
+    else
+      dim=0
     endif
-    
-    offset=offset+sizeof(data)  ! Décalage
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    call mpi_file_set_view(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    mpi_info_null                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data                          ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Offset    
+    offset=offset+sizeof(data)
     call mpi_barrier(comm,ierr)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
@@ -991,30 +1056,46 @@ contains
     integer(int64)          , intent(in)    :: data
     integer(int32)                          :: iErr
     !>
+    integer(int32)                          :: dim
+    integer(int32)                          :: mpi_type
     integer(int32)                          :: statut(MPI_STATUS_SIZE)
     integer(int32)                          :: rankMPI
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Ecriture des blocs de données
+    mpi_type=mpi_integer                       !>  <==
+    
     call mpi_comm_rank(comm,rankMPI,iErr)
-    
     if( rankMPI==0 )then
-      !print '("string:      ",a )',    string
-      !print '("len(string): ",i0)',len(string)
-      call mpi_file_write_at( &
-      &    unit              ,&
-      &    offset            ,&  !> on retrouve ici l'offset
-      &    data              ,&  !> le tableau à écrire     
-      &    1                 ,&  !> le nombre d'éléments    
-      &    mpi_integer8      ,&  !> le type d'éléments      
-      &    statut            ,&
-      &    iErr               )
+      dim=1
+    else
+      dim=0
     endif
-    
-    offset=offset+sizeof(data)  ! Décalage
-    call mpi_barrier(comm,ierr)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    call mpi_file_set_view(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    mpi_info_null                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>          
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data                          ,&
+    &    dim                           ,& !> dimension
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    return
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Offset    
+    offset=offset+sizeof(data)
+    call mpi_barrier(comm,ierr)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<    return
   end function mpiio_global_write_int64
 
   !function     mpiio_global_write_cptr(comm, unit, offset, data_cptr, data_size) result(iErr)
@@ -1096,7 +1177,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1158,7 +1239,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1220,7 +1301,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1282,7 +1363,8 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
+    !    "big_endian"                  ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1344,7 +1426,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> New type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
@@ -1411,7 +1493,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_new_type                  ,& !> new type
-    &    "native"                      ,&
+    &    "big_endian"                      ,&
     &    MPI_INFO_NULL                 ,&
     &    iErr                           )
     
@@ -1461,11 +1543,13 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     dim=size(data)
-    if( .not.dim==0 )nBytes=sizeof(data(1))
+    !if( .not.dim==0 )nBytes=sizeof(data(1))
+    if( .not.dim==0 )nBytes=len(data(1))
+    dim=dim*nBytes
     allocate(dimRank(0:sizeMPI-1))
     
     call mpi_allgather(                 &
-    &    dim*nBytes, 1, mpi_integer    ,&
+    &    dim       , 1, mpi_integer    ,&
     &    dimRank(0), 1, mpi_integer    ,&
     &    comm                          ,&
     &    iErr                           )
@@ -1475,14 +1559,23 @@ contains
     enddo
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_FILE_write_at_ALL( &  !> Colleltives
-    &    unit                  ,&
-    &    offset                ,&  !> on retrouve ici l'offset
-    &    data                  ,&  !> le tableau à écrire     
-    &    (dim*nBytes)          ,&  !> le nombre d'éléments    
-    &    mpi_type              ,&  !> le type d'éléments      
-    &    statut                ,&
-    &    iErr                   )
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data(:)                       ,&
+    &    dim                           ,&  !> le nombre d'éléments    
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     do iRank=rankMPI,sizeMPI-1
@@ -1494,7 +1587,7 @@ contains
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return
   end function mpiio_write_block_string
-
+  
   function     mpiio_write_block_int32(comm, unit, offset, data) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
@@ -1534,18 +1627,29 @@ contains
     enddo
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_FILE_write_at_ALL( &  !> Colleltives
-    &    unit                  ,&
-    &    offset                ,&  !> on retrouve ici l'offset
-    &    data                  ,&  !> le tableau à écrire     
-    &    dim                   ,&  !> le nombre d'éléments    
-    &    mpi_type              ,&  !> le type d'éléments      
-    &    statut                ,&
-    &    iErr                   )
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data(:)                       ,&
+    &    dim                           ,&  !> le nombre d'éléments    
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<    
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> offset
     do iRank=rankMPI,sizeMPI-1
-      offset=offset+dimRank(iRank) ! <= 4 = int_size
+      offset=offset+dimRank(iRank)
     enddo
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1593,18 +1697,29 @@ contains
     enddo
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_FILE_write_at_ALL( &  !> Colleltives
-    &    unit                  ,&
-    &    offset                ,&  !> on retrouve ici l'offset
-    &    data                  ,&  !> le tableau à écrire     
-    &    dim                   ,&  !> le nombre d'éléments    
-    &    mpi_type              ,&  !> le type d'éléments      
-    &    statut                ,&
-    &    iErr                   )
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data(:)                       ,&
+    &    dim                           ,&  !> le nombre d'éléments    
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<    
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> offset
     do iRank=rankMPI,sizeMPI-1
-      offset=offset+dimRank(iRank) ! <= 4 = int_size
+      offset=offset+dimRank(iRank)
     enddo
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1652,16 +1767,28 @@ contains
     enddo
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_FILE_write_at_ALL( &  !> Colleltives
-    &    unit                  ,&
-    &    offset                ,&  !> on retrouve ici l'offset
-    &    data                  ,&  !> le tableau à écrire     
-    &    dim                   ,&  !> le nombre d'éléments    
-    &    mpi_type              ,&  !> le type d'éléments      
-    &    statut                ,&
-    &    iErr                   )
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    !    "big_endian"                  ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data(:)                       ,&
+    &    dim                           ,&  !> le nombre d'éléments    
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> offset
     do iRank=rankMPI,sizeMPI-1
       offset=offset+dimRank(iRank) ! <= 4 = int_size
     enddo
@@ -1711,16 +1838,27 @@ contains
     enddo
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    call MPI_FILE_write_at_ALL( &  !> Colleltives
-    &    unit                  ,&
-    &    offset                ,&  !> on retrouve ici l'offset
-    &    data                  ,&  !> le tableau à écrire     
-    &    dim                   ,&  !> le nombre d'éléments    
-    &    mpi_type              ,&  !> le type d'éléments      
-    &    statut                ,&
-    &    iErr                   )
+    call MPI_FILE_SET_VIEW(             &
+    &    unit                          ,&
+    &    offset                        ,& !> deplacement initial
+    &    mpi_type                      ,& !> Old type
+    &    mpi_type                      ,& !> New type
+    &    "big_endian"                      ,&
+    &    MPI_INFO_NULL                 ,&
+    &    iErr                           )
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Écriture collective
+    call mpi_file_write_all(            &
+    &    unit                          ,&
+    &    data(:)                       ,&
+    &    dim                           ,&  !> le nombre d'éléments    
+    &    mpi_type                      ,& !> Old type
+    &    MPI_STATUS_IGNORE             ,&
+    &    iErr                           )
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> offset
     do iRank=rankMPI,sizeMPI-1
       offset=offset+dimRank(iRank) ! <= 4 = int_size
     enddo
