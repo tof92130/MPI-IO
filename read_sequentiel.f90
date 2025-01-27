@@ -8,8 +8,8 @@ program read_with_header_integer
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
   !> Ouverture du fichier en mode lecture
-  !open(newunit=unit, file='donnees.dat', status='old', access='stream', form='unformatted',action='read')
-  open(newunit=unit, file='donnees.dat', status='old', access='stream', form='unformatted',action='read',convert='BIG_ENDIAN')
+  open(newunit=unit, file='donnees.dat', status='old', access='stream', form='unformatted',action='read')
+  !open(newunit=unit, file='donnees.dat', status='old', access='stream', form='unformatted',action='read',convert='BIG_ENDIAN')
 
   inquire(unit=unit, size=file_size)
   print '()'

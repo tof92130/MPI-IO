@@ -891,8 +891,7 @@ contains
     return
   end function mpiio_read_block_complex128
   !<<<         mpiio_read_block
-
-
+  
   !>>>         mpiio_global_write
   function     mpiio_global_write_string(comm, unit, offset, data) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -923,7 +922,7 @@ contains
     &    offset                        ,& !> deplacement initial
     &    mpi_type                      ,& !> Old type
     &    mpi_type                      ,& !> New type
-    &    "native"                  ,&
+    &    "native"                      ,&
     &    mpi_info_null                 ,&
     &    iErr                           )
     
@@ -935,7 +934,7 @@ contains
     !> Écriture collective
     call mpi_file_write_all(            &
     &    unit                          ,&
-    &    data(:)                       ,&
+    &    data                          ,&
     &    dim                           ,& !> dimension
     &    mpi_type                      ,& !> Old type
     &    MPI_STATUS_IGNORE             ,&
@@ -1927,4 +1926,43 @@ contains
   !  return
   !end function mpiio_write_cptr
   
+  subroutine to_nativen_int32(comm,val,be_val)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    integer(int32), intent(in)    :: comm
+    integer(int32), intent(in)    :: val
+    integer(int32), intent(inout) :: be_val
+    integer(int8)                 :: bytes(4)
+    integer(int32)                :: pos
+    integer(int32)                :: iErr
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    call mpi_pack(val,1,mpi_integer,bytes,4,pos,comm,iErr)
+    be_val=transfer(bytes,be_val)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  end subroutine to_nativen_int32
+  
+  subroutine     to_nativen_int32_tab(comm,val,be_val)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    integer(int32), intent(in)    :: comm
+    integer(int32), intent(in)    :: val   (:)
+    integer(int32), intent(inout) :: be_val(:)
+    !>
+    integer(int32)                :: n,sizeofVal
+    integer(int8) , allocatable   :: bytes(:)
+    integer(int32)                :: pos
+    integer(int32)                :: iErr
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    n=size(val)
+    sizeofVal=sizeof(val(1))
+    allocate(bytes(n*sizeofVal))
+    pos=1
+    
+    call mpi_pack(val,n,mpi_integer,bytes,n*sizeofVal,pos,comm,iErr)
+    be_val=transfer(bytes,be_val)
+    deallocate(bytes)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  end subroutine to_nativen_int32_tab
+
+
 end module space_mpiio
