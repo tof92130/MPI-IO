@@ -1,4 +1,4 @@
-program read_at
+program read
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   use iso_fortran_env
   use mpi
@@ -139,7 +139,7 @@ program read_at
   
   if( 0==0 )then ! lecture entrelacee
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    !> Lecture avec index real64  
+    !> Lecture avec index real64
     block 
       integer(int32), pointer :: dimRank(:)
       real(real64)  , pointer :: valeurs(:)
@@ -189,17 +189,86 @@ program read_at
       iErr=mpiio_read_block(comm=comm, unit=unit, dimGlob=dimGlob, offset=offset, data=valeurs)
       
       !print *,rank,valeurs(:)
-      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(f5.0,1x))')rank,valeurs(:)
+      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*(f5.0,"+j",f5.0,1x))')rank,valeurs(:)
       iErr=mpiio_message(comm=comm, buffer=buffer)  
       
       deallocate(valeurs)
       !print *,offset,file_size
       
-      write(buffer,'("rank ",i3.3,1x,"Lecture Block real64 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+      write(buffer,'("rank ",i3.3,1x,"Lecture Block complex128 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
       iErr=mpiio_message(comm=comm, buffer=buffer)
     end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   endif
+
+
+  if( 0==0 )then ! lecture entrelacee
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Lecture avec index complex128  
+    block 
+      integer(int32) , pointer :: dimRank(:)
+      complex(real64), pointer :: valeurs(:)
+      integer(int32)           :: i,idx
+      
+      n0= rank   *dimGlob/sizeMPI+1
+      n1=(rank+1)*dimGlob/sizeMPI
+      dim=n1-n0+1
+      
+      allocate(dimRank(0:sizeMPI-1))
+      call mpi_allgather(                 &
+      &    dim       , 1, mpi_integer    ,&
+      &    dimRank(0), 1, mpi_integer    ,&
+      &    comm                          ,&
+      &    iErr                           )
+      
+      allocate(indices(1:dim))
+      idx=0
+      do iRank=0,sizeMPI-1
+        do i=1,dimRank(iRank)
+          idx=idx+1
+          if( iRank==rank )indices(i)=idx
+        enddo
+      enddo
+      deallocate(dimRank)
+      
+      !write(buffer,'("rank ",i3.3,1x,"index: ",*(i3,1x))')rank,indices(1:dim)
+      !iErr=mpiio_message(comm=comm, buffer=buffer)  
+      
+      iErr=mpiio_read_with_index(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+      
+      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*( "(",f5.0,"+j",f5.0,")",1x) )')rank,valeurs(:)
+      iErr=mpiio_message(comm=comm, buffer=buffer)  
+      
+      deallocate(indices)
+      deallocate(valeurs)
+      write(buffer,'("rank ",i3.3,1x,"Lecture avec index complex128 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+      iErr=mpiio_message(comm=comm, buffer=buffer)
+    end block
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  else
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Lecture Block complex128
+    block
+      real(real64), pointer :: valeurs(:)
+      
+      iErr=mpiio_read_block(comm=comm, unit=unit, dimGlob=dimGlob, offset=offset, data=valeurs)
+      
+      !print *,rank,valeurs(:)
+      write(buffer,'("rank ",i3.3,1x,"valeurs: ",*( "(",f5.0,"+j",f5.0,")",1x))')rank,valeurs(:)
+      iErr=mpiio_message(comm=comm, buffer=buffer)  
+      
+      deallocate(valeurs)
+      !print *,offset,file_size
+      
+      write(buffer,'("rank ",i3.3,1x,"Lecture Block complex128 Terminée",t100,"octets lus: ",i0,"/",i0)')rank,offset,file_size
+      iErr=mpiio_message(comm=comm, buffer=buffer)
+    end block
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  endif
+
+
+
+
 
 
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -292,6 +361,4 @@ program read_at
   call mpi_finalize(iErr)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-end program read_at
-
-
+end program read

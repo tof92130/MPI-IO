@@ -96,7 +96,7 @@ program mpi_io_write_with_indices
     integer(int32), pointer :: valeurs(:)
     allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
         
-    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, stride=1, data=valeurs)
     !iErr=mpiio_write_with_indx_cptr(comm=comm, unit=unit, offset=offset, data_indx=indices, data_cptr=c_loc(valeurs), data_size=sizeof(valeurs))
     
     deallocate(valeurs)
@@ -112,7 +112,7 @@ program mpi_io_write_with_indices
     real(real64), pointer :: valeurs(:)
     allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
     
-    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, stride=1, data=valeurs)
     
     deallocate(valeurs)
     
@@ -121,6 +121,24 @@ program mpi_io_write_with_indices
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Ecriture des données real64 indexées
+  block
+    complex(real64), pointer :: valeurs(:)
+    allocate(valeurs(1:dim))
+    valeurs(1:dim)%re=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+    valeurs(1:dim)%im=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+    
+    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, stride=1, data=valeurs)
+    
+    deallocate(valeurs)
+    
+    write(buffer,'("rank ",i3.3,1x,"Ecriture des données complex128 indexées",t100,"octets écrits: ",i0)')rank,offset
+    iErr=mpiio_message(comm=comm, buffer=buffer)
+  end block
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Ecriture des données character indexées
   block
@@ -131,7 +149,7 @@ program mpi_io_write_with_indices
     enddo    
     valeurs(:)(80:80)=lf
     
-    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, data=valeurs)
+    iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, stride=80, data=valeurs)
     
     deallocate(valeurs)
     

@@ -30,9 +30,10 @@ program read_with_header_integer
   !> Lecture des int32
   block 
     integer(int32), pointer :: valeurs(:)
+    print '(/"Lecture des blocs de données int32")'
     allocate(valeurs(dimGlob))
     read(unit)valeurs(1:dimGlob)
-    print '("valeurs ",*(i6,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
+    print '("valeurs ",*(i6,1x))',valeurs(1:dimGlob)
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -41,20 +42,37 @@ program read_with_header_integer
   !> Lecture des real64
   block
     real(real64), pointer :: valeurs(:)
+    print '(/"Lecture des blocs de données real64")'
     allocate(valeurs(1:dimGlob))
     read(unit)valeurs(1:dimGlob)
-    print '("valeurs ",*(f6.0,1x))',valeurs(1:dimGlob) !> format norme fortran 2008
+    print '("valeurs ",*(f6.0,1x))',valeurs(1:dimGlob)
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  !> Lecture des complex128
+  block
+    integer(int32)           :: i
+    complex(real64), pointer :: valeurs(:)
+    print '(/"Lecture des blocs de données complex128")'
+    allocate(valeurs(1:dimGlob))
+    read(unit)valeurs(1:dimGlob)
+    do i=1,size(valeurs)
+      print '("valeurs(",i3,")=(",f5.0,"+j",f5.0,")"))',i,valeurs(i)
+    enddo
+    deallocate(valeurs)
+  end block
+  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  
+  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Lecture des character(80)
   block
     character(80), pointer :: valeurs(:)
+    print '(/"Lecture des blocs de données character(80)")'
     allocate(valeurs(1:dimGlob))
     read(unit)valeurs(1:dimGlob)
-    print '("valeurs ",*(a,/))',valeurs(1:dimGlob) !> format norme fortran 2008
+    print '("valeurs ",*(a,/))',valeurs(1:dimGlob)(1:79)
     deallocate(valeurs)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
