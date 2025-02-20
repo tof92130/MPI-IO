@@ -113,7 +113,7 @@ program mpi_io_write_with_indices
     real(real64)  , pointer :: valeurs    (:)
     
     integer(int32)          :: i
-    real(real64)  , pointer :: valeursBloc(:,:)
+    real(real64)  , pointer :: valeursBloc(:)
     real(real64)            :: t0
 
     allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rankMPI + sizeMPI*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
@@ -122,27 +122,22 @@ program mpi_io_write_with_indices
     write(buffer,'("rankMPI ",i3.3,1x,"Ecriture des données real64 indexées",t100,"octets écrits: ",i0)')rankMPI,offset
     iErr=mpiio_message(comm=comm, buffer=buffer)
     
-
-    write(buffer,'("rankMPI ",i3.3,1x,"TEST Rangement par bloc des données real64")')rankMPI
-    iErr=mpiio_message(comm=comm, buffer=buffer)
-    
+    !>>> TEST
     t0=mpiio_part2block_real64(comm=comm, data_indx=indices, stride=1, data=valeurs, dataBloc=valeursBloc)
-    
-    write(buffer,'("rankMPI ",i3.3,1x,"Rangement par bloc des données real64 indexées",t100,"t0: ",e12.5)')rankMPI,t0
+   
+    write(buffer,'("rankMPI ",i3.3,1x,"TEST Rangement par bloc des données real64 indexées",t100,"t0: ",e12.5)')rankMPI,t0
     iErr=mpiio_message(comm=comm, buffer=buffer)
     
     do iRank=0,sizeMPI-1
       if( iRank==rankMPI )then
-        print '(/"rankMPI",i3)',rankMPI
-        do i=1,size(valeursBloc,2)
-          print '(3x,"valeursBloc(:,",i0")=",*(f4.0,1x))',i,valeursBloc(:,i)
+        print '("rankMPI",i3)',rankMPI
+        do i=1,size(valeursBloc)
+          print '(3x,"valeursBloc(:,",i0")=",*(f4.0,1x))',i,valeursBloc(i)
         enddo
       endif
       call mpi_barrier(comm,iErr)
     enddo  
-    
-    write(buffer,'("rankMPI ",i3.3,1x,"FIN TEST Rangement par bloc des données real64")')rankMPI
-    iErr=mpiio_message(comm=comm, buffer=buffer)
+    !<<< TEST
     
     deallocate(valeurs) ; valeurs=>null()
     deallocate(valeursBloc)

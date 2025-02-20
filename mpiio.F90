@@ -2176,11 +2176,10 @@ contains
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(in)  :: comm
     integer(int64), intent(in)  :: data_indx(:)   !> Tableau de position globale des données locales
-    real(real64)  , pointer     :: data     (:)   !> Matrice des données entrelacees
-    real(real64)  , pointer     :: dataBloc (:,:)   !> Matrice des données regroupées par blocs
+    real(real64)  , intent(in)  :: data     (:)   !> Matrice des données entrelacees
+    real(real64)  , pointer     :: dataBloc (:)   !> Matrice des données regroupées par blocs
     real(real64)                :: t0
     
-    real(real64)  , pointer     :: dataPart (:,:)   !> Matrice des données entrelacees
     integer(int32)              :: i,iErr
     integer(int32)              :: stride,dim,dimGlb
     integer(int32)              :: iRank,jRank,rankMPI,sizeMPI
@@ -2198,7 +2197,6 @@ contains
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     !> Initialisation de stride et de m
     dim=size(data)/stride
-    call c_f_pointer(cptr=c_loc(data), fptr=dataPart, shape=[stride,dim])
     
     !> Initialisation MPI
     call MPI_Comm_rank(comm, rankMPI, iErr)
@@ -2260,8 +2258,8 @@ contains
     if( rankMPI==0 )print'()'
     do i=1,dim
       jRank= min((data_indx(i)-1)/taillePaquet,sizeMPI-1)
-      send_data     (:,send_displs(jRank)+1) = dataPart (:,i)  !> Transfert de colonnes complètes
-      send_data_indx(  send_displs(jRank)+1) = data_indx(  i)
+      send_data     (1:stride,send_displs(jRank)+1) = data     (stride*(i-1)+1:stride*i)  !> Transfert de colonnes complètes
+      send_data_indx(         send_displs(jRank)+1) = data_indx(i)
       
       send_displs(jRank)=send_displs(jRank)+1
     enddo
@@ -2298,14 +2296,14 @@ contains
 
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     ! Étape 6 : Tri local des données suivant data_indx
-    allocate(dataBloc(1:stride,1:sum(recv_counts))) 
+    allocate(dataBloc(1:stride*sum(recv_counts))) 
     
     block
       integer(int32) :: j,minData_indx
       mindata_indx=minval(recv_data_indx)
       do i=1,size(recv_data,2)
         j=recv_data_indx(i)-mindata_indx+1
-        dataBloc(1:stride,j) = recv_data(1:stride,i)
+        dataBloc(stride*(j-1)+1:stride*j) = recv_data(1:stride,i)
       enddo
     end block
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
