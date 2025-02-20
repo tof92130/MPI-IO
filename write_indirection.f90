@@ -11,7 +11,7 @@ program mpi_io_write_with_indices
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   integer(int32)                     :: dim,dimGlob
-  integer(int32)                     :: rank,size,unit,iErr
+  integer(int32)                     :: rankMPI,sizeMPI,unit,iErr
   integer(int32)                     :: aint_size,char_size,int_size
   integer(int32)                     :: iRank
   integer(MPI_OFFSET_KIND)           :: offset
@@ -31,8 +31,8 @@ program mpi_io_write_with_indices
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  call mpi_comm_rank(comm,rank,iErr)
-  call mpi_comm_size(comm,size,iErr)
+  call mpi_comm_rank(comm,rankMPI,iErr)
+  call mpi_comm_size(comm,sizeMPI,iErr)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -45,7 +45,7 @@ program mpi_io_write_with_indices
   call mpi_type_size(mpi_integer  ,int_size ,iErr)
   call mpi_type_size(mpi_aint     ,aint_size,iErr)
   
-  if( rank==0 )then
+  if( rankMPI==0 )then
     print '(/"char_size (octets)=",i0)',char_size
     print '( "int32             =",i0)',int32       
     print '( "int_size  (octets)=",i0)',int_size
@@ -58,16 +58,16 @@ program mpi_io_write_with_indices
   
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Définition des données
-  dim=1+rank
-  allocate(indices(1:dim)) ; indices(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+  dim=1+rankMPI
+  allocate(indices(1:dim)) ; indices(1:dim)=[(1+ rankMPI + sizeMPI*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
   
   !> Calcul de dimGlob
   call mpi_allreduce(dim,dimGlob,1,mpi_integer,mpi_sum,comm,ierr)  
   
-  do iRank=0,size-1
-    if( iRank==0.and.rank==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
-    if( iRank==rank )then
-      print '("rank ",i3,2x,"dim=",i3,2x,"indices ",*(i4,1x))',rank,dim,indices(1:dim) !> format norme fortran 2008
+  do iRank=0,sizeMPI-1
+    if( iRank==0.and.rankMPI==0 )print '(/"Chaque process connait sa dimension et ses valeurs")'
+    if( iRank==rankMPI )then
+      print '("rankMPI ",i3,2x,"dim=",i3,2x,"indices ",*(i4,1x))',rankMPI,dim,indices(1:dim) !> format norme fortran 2008
     endif
     call mpi_barrier(comm,iErr)
   enddo
@@ -78,7 +78,7 @@ program mpi_io_write_with_indices
   iErr=mpiio_open_write(comm=comm,name="donnees.dat",unit=unit)
   offset=0_MPI_OFFSET_KIND
   
-  write(buffer,'("rank ",i3.3,1x,"octets ecrit: ",i0)')rank,offset
+  write(buffer,'("rankMPI ",i3.3,1x,"octets ecrit: ",i0)')rankMPI,offset
   iErr=mpiio_message(comm=comm, buffer=buffer)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
@@ -86,7 +86,7 @@ program mpi_io_write_with_indices
   !> header
   write(header,'("dim=",i0)')dimGlob ; header(64:64)=lf
   iErr=mpiio_global_write(comm=comm, unit=unit, offset=offset, data=header)
-  write(buffer,'("rank ",i3.3,1x,"octets ecrit: ",i0)')rank,offset
+  write(buffer,'("rankMPI ",i3.3,1x,"octets ecrit: ",i0)')rankMPI,offset
   iErr=mpiio_message(comm=comm, buffer=buffer)
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
@@ -94,14 +94,14 @@ program mpi_io_write_with_indices
   !> Ecriture des données int32 indexées
   block
     integer(int32), pointer :: valeurs(:)
-    allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
-        
+    allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rankMPI + sizeMPI*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+    
     iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, stride=1, data=valeurs)
     !iErr=mpiio_write_with_indx_cptr(comm=comm, unit=unit, offset=offset, data_indx=indices, data_cptr=c_loc(valeurs), data_size=sizeof(valeurs))
     
     deallocate(valeurs)
 
-    write(buffer,'("rank ",i3.3,1x,"Ecriture des données int32 indexées",t100,"octets écrits: ",i0)')rank,offset
+    write(buffer,'("rankMPI ",i3.3,1x,"Ecriture des données int32 indexées",t100,"octets écrits: ",i0)')rankMPI,offset
     iErr=mpiio_message(comm=comm, buffer=buffer)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -109,15 +109,43 @@ program mpi_io_write_with_indices
   !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   !> Ecriture des données real64 indexées
   block
-    real(real64), pointer :: valeurs(:)
-    allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+    use iso_c_binding, only: c_loc,c_f_pointer
+    real(real64)  , pointer :: valeurs    (:)
+    
+    integer(int32)          :: i
+    real(real64)  , pointer :: valeursBloc(:,:)
+    real(real64)            :: t0
+
+    allocate(valeurs(1:dim)) ; valeurs(1:dim)=[(1+ rankMPI + sizeMPI*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
     
     iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, stride=1, data=valeurs)
-    
-    deallocate(valeurs)
-    
-    write(buffer,'("rank ",i3.3,1x,"Ecriture des données real64 indexées",t100,"octets écrits: ",i0)')rank,offset
+    write(buffer,'("rankMPI ",i3.3,1x,"Ecriture des données real64 indexées",t100,"octets écrits: ",i0)')rankMPI,offset
     iErr=mpiio_message(comm=comm, buffer=buffer)
+    
+
+    write(buffer,'("rankMPI ",i3.3,1x,"TEST Rangement par bloc des données real64")')rankMPI
+    iErr=mpiio_message(comm=comm, buffer=buffer)
+    
+    t0=mpiio_part2block_real64(comm=comm, data_indx=indices, stride=1, data=valeurs, dataBloc=valeursBloc)
+    
+    write(buffer,'("rankMPI ",i3.3,1x,"Rangement par bloc des données real64 indexées",t100,"t0: ",e12.5)')rankMPI,t0
+    iErr=mpiio_message(comm=comm, buffer=buffer)
+    
+    do iRank=0,sizeMPI-1
+      if( iRank==rankMPI )then
+        print '(/"rankMPI",i3)',rankMPI
+        do i=1,size(valeursBloc,2)
+          print '(3x,"valeursBloc(:,",i0")=",*(f4.0,1x))',i,valeursBloc(:,i)
+        enddo
+      endif
+      call mpi_barrier(comm,iErr)
+    enddo  
+    
+    write(buffer,'("rankMPI ",i3.3,1x,"FIN TEST Rangement par bloc des données real64")')rankMPI
+    iErr=mpiio_message(comm=comm, buffer=buffer)
+    
+    deallocate(valeurs) ; valeurs=>null()
+    deallocate(valeursBloc)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
@@ -126,14 +154,14 @@ program mpi_io_write_with_indices
   block
     complex(real64), pointer :: valeurs(:)
     allocate(valeurs(1:dim))
-    valeurs(1:dim)%re=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
-    valeurs(1:dim)%im=[(1+ rank + size*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+    valeurs(1:dim)%re=[(1+ rankMPI + sizeMPI*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
+    valeurs(1:dim)%im=[(1+ rankMPI + sizeMPI*iRank-iRank*(iRank+1)/2 ,iRank=0,dim-1)]
     
     iErr=mpiio_write_with_indx(comm=comm, unit=unit, offset=offset, data_indx=indices, stride=1, data=valeurs)
     
     deallocate(valeurs)
     
-    write(buffer,'("rank ",i3.3,1x,"Ecriture des données complex128 indexées",t100,"octets écrits: ",i0)')rank,offset
+    write(buffer,'("rankMPI ",i3.3,1x,"Ecriture des données complex128 indexées",t100,"octets écrits: ",i0)')rankMPI,offset
     iErr=mpiio_message(comm=comm, buffer=buffer)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -145,7 +173,7 @@ program mpi_io_write_with_indices
     character(80) , pointer :: valeurs(:)
     allocate(valeurs(1:dim))
     do iRank=0,dim-1
-      write(valeurs(iRank+1),'("rank",i3.3," valeur=""",i5.5,"""")')rank,1+ rank + size*iRank-iRank*(iRank+1)/2
+      write(valeurs(iRank+1),'("rankMPI",i3.3," valeur=""",i5.5,"""")')rankMPI,1+ rankMPI + sizeMPI*iRank-iRank*(iRank+1)/2
     enddo    
     valeurs(:)(80:80)=lf
     
@@ -153,7 +181,7 @@ program mpi_io_write_with_indices
     
     deallocate(valeurs)
     
-    write(buffer,'("rank ",i3.3,1x,"Ecriture des données character indexées",t100,"octets écrits: ",i0)')rank,offset
+    write(buffer,'("rankMPI ",i3.3,1x,"Ecriture des données character indexées",t100,"octets écrits: ",i0)')rankMPI,offset
     iErr=mpiio_message(comm=comm, buffer=buffer)
   end block
   !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

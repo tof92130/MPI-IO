@@ -45,6 +45,8 @@
 !>  function mpiio_write_block_complex128    (comm, unit, offset,            data)                  result(iErr)
 !x  function mpiio_write_cptr                (comm, unit, offset, data_cptr, data_size)             result(iErr)
 
+!>  function mpiio_part2block_real64         (comm,data_indx,stride,data, dataBloc)                      result(t0)
+
 module space_mpiio
   use iso_fortran_env
   !use iso_c_binding, only: c_ptr
@@ -2166,6 +2168,157 @@ contains
     deallocate(bytes)
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   end subroutine to_nativen_int32_tab
+  
+  function        mpiio_part2block_real64(comm, data_indx,stride,data, dataBloc) result(t0)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    use iso_c_binding
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    integer(int32), intent(in)  :: comm
+    integer(int64), intent(in)  :: data_indx(:)   !> Tableau de position globale des données locales
+    real(real64)  , pointer     :: data     (:)   !> Matrice des données entrelacees
+    real(real64)  , pointer     :: dataBloc (:,:)   !> Matrice des données regroupées par blocs
+    real(real64)                :: t0
+    
+    real(real64)  , pointer     :: dataPart (:,:)   !> Matrice des données entrelacees
+    integer(int32)              :: i,iErr
+    integer(int32)              :: stride,dim,dimGlb
+    integer(int32)              :: iRank,jRank,rankMPI,sizeMPI
+    
+    integer(int32)              :: taillePaquet
+    integer(int32), allocatable :: send_counts   (  :), recv_counts   (  :)
+    integer(int32), allocatable :: send_displs   (  :), recv_displs   (  :)
+    integer(int64), allocatable :: send_data_indx(  :), recv_data_indx(  :)
+    real(real64)  , allocatable :: send_data     (:,:), recv_data     (:,:)
+    character(120)              :: buffer
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    t0=mpi_wtime()
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Initialisation de stride et de m
+    dim=size(data)/stride
+    call c_f_pointer(cptr=c_loc(data), fptr=dataPart, shape=[stride,dim])
+    
+    !> Initialisation MPI
+    call MPI_Comm_rank(comm, rankMPI, iErr)
+    call MPI_Comm_size(comm, sizeMPI, iErr)
+    
+    !> Allocation des structures de communication
+    allocate(send_counts(0:sizeMPI-1), recv_counts(0:sizeMPI-1))
+    allocate(send_displs(0:sizeMPI-1), recv_displs(0:sizeMPI-1))
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Étape 1 : Déterminer combien d'éléments chaque processus doit envoyer et recevoir
+    send_counts=0
+    recv_counts=0
+    
+    call mpi_allReduce(dim,dimGlb,1,mpi_integer,mpi_sum,comm,iErr)
+    !write(buffer,'("mpiio_part2block dimGlb:",i3)')dimGlb
+    !iErr=mpiio_message(comm=comm, buffer=buffer)  
+    
+    taillePaquet=(dimGlb/sizeMPI)
+    !write(buffer,'("mpiio_part2block taillePaquet:",i3)')taillePaquet
+    !iErr=mpiio_message(comm=comm, buffer=buffer)  
+    
+    do i=1,dim
+      jRank=min((data_indx(i)-1)/taillePaquet,sizeMPI-1) !> Détermination du proc cible
+      send_counts(jRank)=send_counts(jRank)+1
+    enddo
+    
+    !write(buffer,'("mpiio_part2block send_counts:",*(i3,1x) )')send_counts(:)
+    !iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Étape 2 : Échange des tailles avec MPI_Alltoall
+    call MPI_Alltoall(send_counts, 1, mpi_integer, recv_counts, 1, mpi_integer, comm, iErr)
+    
+    !write(buffer,'("mpiio_part2block recv_counts:",*(i3,1x) )')recv_counts(:)
+    !iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Étape 3 : Calcul des décalages pour MPI_Alltoallv
+    send_displs(0)=0
+    recv_displs(0)=0
+    do iRank=1,sizeMPI-1
+      send_displs(iRank)=send_displs(iRank-1)+send_counts(iRank-1)
+      recv_displs(iRank)=recv_displs(iRank-1)+recv_counts(iRank-1)
+    enddo
+    
+    !write(buffer,'("mpiio_part2block send_displs:",*(i3,1x) )')send_displs(:) ; iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !write(buffer,'("mpiio_part2block recv_displs:",*(i3,1x) )')recv_displs(:) ; iErr=mpiio_message(comm=comm, buffer=buffer)  
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Étape 4 : Allocation des buffers de communication
+    allocate(send_data     (1:stride,1:sum(send_counts))) ! Stockage colonne-major (entrelacement des données)
+    allocate(send_data_indx(         1:sum(send_counts)))
+    
+    allocate(recv_data     (1:stride,1:sum(recv_counts))) ! Stockage colonne-major (entrelacement des données)        
+    allocate(recv_data_indx(         1:sum(recv_counts)))    
+    
+    !> Organisation des données à envoyer
+    if( rankMPI==0 )print'()'
+    do i=1,dim
+      jRank= min((data_indx(i)-1)/taillePaquet,sizeMPI-1)
+      send_data     (:,send_displs(jRank)+1) = dataPart (:,i)  !> Transfert de colonnes complètes
+      send_data_indx(  send_displs(jRank)+1) = data_indx(  i)
+      
+      send_displs(jRank)=send_displs(jRank)+1
+    enddo
+    
+    !> Réinitialisation des send_displs
+    send_displs(0)=0
+    do iRank=1,sizeMPI-1
+      send_displs(iRank)=send_displs(iRank-1)+send_counts(iRank-1)
+    enddo
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Étape 5 : Communication des données avec MPI_Alltoallv
+    call MPI_Alltoallv(                                                &
+    &    send_data, stride*send_counts, stride*send_displs, mpi_real8, &
+    &    recv_data, stride*recv_counts, stride*recv_displs, mpi_real8, &
+    &    comm, iErr                                                    )
+    
+    call MPI_Alltoallv(                                          &
+    &    send_data_indx, send_counts, send_displs, mpi_integer8, &
+    &    recv_data_indx, recv_counts, recv_displs, mpi_integer8, &
+    &    comm, ierr                                              )
+    
+    !do iRank=0,sizeMPI-1
+    !  if( iRank==rankMPI )then
+    !    print '(/"rank",i3)',rankMPI
+    !    do i=1,dim
+    !      print '(3x,"recv_data_indx(:,",i4")=",i4)',i,recv_data_indx(i)
+    !    enddo
+    !  endif
+    !  call mpi_barrier(comm,iErr)
+    !enddo  
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    ! Étape 6 : Tri local des données suivant data_indx
+    allocate(dataBloc(1:stride,1:sum(recv_counts))) 
+    
+    block
+      integer(int32) :: j,minData_indx
+      mindata_indx=minval(recv_data_indx)
+      do i=1,size(recv_data,2)
+        j=recv_data_indx(i)-mindata_indx+1
+        dataBloc(1:stride,j) = recv_data(1:stride,i)
+      enddo
+    end block
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !> Nettoyage
+    deallocate(send_data, send_counts, send_displs)
+    deallocate(recv_data, recv_counts, recv_displs)
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    t0=mpi_wtime()-t0
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    return
+  end function mpiio_part2block_real64
+  
 end module space_mpiio

@@ -1,7 +1,5 @@
 #! /bin/bash
 
-
-
 FC_FLAGS="-O0 -g -check all -fpe0 -warn -traceback -debug"
 FC_FLAGDS="-O0 -g -Wextra -Warray-temporaries -Wconversion  -Wall -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan"
 
