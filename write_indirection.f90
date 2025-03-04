@@ -123,9 +123,12 @@ program mpi_io_write_with_indices
     iErr=mpiio_message(comm=comm, buffer=buffer)
     
     !>>> TEST
-    t0=mpiio_part2block_real64(comm=comm, data_indx=indices, stride=1, data=valeurs, dataBloc=valeursBloc)
-   
-    write(buffer,'("rankMPI ",i3.3,1x,"TEST Rangement par bloc des données real64 indexées",t100,"t0: ",e12.5)')rankMPI,t0
+    !t0=mpiio_part2block_real64     (comm=comm, data_indx=indices, stride=1, data=valeurs, dataBloc=valeursBloc)
+    !write(buffer,'("rankMPI ",i3.3,1x,"TEST int32 Rangement par bloc des données real64 indexées",t100,"t0: ",e12.5)')rankMPI,t0
+    !iErr=mpiio_message(comm=comm, buffer=buffer)
+    
+    t0=mpiio_part2block_real64_test(comm=comm, data_indx=indices, stride=1, data=valeurs, dataBloc=valeursBloc)
+    write(buffer,'("rankMPI ",i3.3,1x,"TEST int64 Rangement par bloc des données real64 indexées",t100,"t0: ",e12.5)')rankMPI,t0
     iErr=mpiio_message(comm=comm, buffer=buffer)
     
     do iRank=0,sizeMPI-1

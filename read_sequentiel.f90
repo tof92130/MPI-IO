@@ -59,7 +59,7 @@ program read_with_header_integer
     allocate(valeurs(1:dimGlob))
     read(unit)valeurs(1:dimGlob)
     do i=1,size(valeurs)
-      print '("valeurs(",i3,")=(",f5.0,"+j",f5.0,")"))',i,valeurs(i)
+      print '("valeurs(",i3,")=(",f5.0,"+j",f5.0,")")',i,valeurs(i)
     enddo
     deallocate(valeurs)
   end block

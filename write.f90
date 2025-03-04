@@ -91,7 +91,7 @@ program write
   !> Ecriture des blocs de données int32
   block
     integer(int32)  , pointer  :: valeurs(:)
-    allocate(valeurs(1:dim))
+    allocate(valeurs(1:dim))    
     valeurs(1:dim)=[(100*rank+iRank,iRank=1,dim)]  
     
     if( rank==0 )print '(/"Ecriture des blocs de données int32")'
@@ -136,8 +136,12 @@ program write
   block
     complex(real64), pointer  :: valeurs(:)
     allocate(valeurs(1:dim))
-    valeurs(1:dim)%re=[(100*rank+iRank,iRank=1,dim)]  
-    valeurs(1:dim)%im=[(100*rank+iRank,iRank=1,dim)]  
+    do iRank=1,dim
+      valeurs(iRank)%re=100*rank+iRank
+      valeurs(iRank)%im=100*rank+iRank
+    enddo
+    !valeurs(1:dim)%re=[(100*rank+iRank,iRank=1,dim)]
+    !valeurs(1:dim)%im=[(100*rank+iRank,iRank=1,dim)]
     
     if( rank==0 )print '(/"Ecriture des blocs de données complex128")'
     !do iRank=0,sizeMPI-1
