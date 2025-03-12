@@ -45,12 +45,13 @@
 !>  function mpiio_write_block_complex128    (comm, unit, offset,            data)                  result(iErr)
 !x  function mpiio_write_cptr                (comm, unit, offset, data_cptr, data_size)             result(iErr)
 
-!>  function mpiio_part2block_real64         (comm,data_indx,stride,data, dataBloc)                      result(t0)
+!>  function mpiio_part2block_real64         (comm,data_indx,stride,data, dataBloc)                 result(t0)
+!>  function mpiio_part2block_real64_test    (comm, data_indx, stride, data, dataBloc)              result(t0)  avec indices int64
+
 
 module space_mpiio
   use iso_fortran_env
   !use iso_c_binding, only: c_ptr
-  use mpi
   implicit none
   
   ! ecriture en native call MPI_FILE_SET_VIEW(fh, 0_8, MPI_CHARACTER, filetype, 'native', MPI_INFO_NULL, ierr)
@@ -111,6 +112,9 @@ module space_mpiio
 contains
   
   function     mpiio_message(comm, buffer) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32) , intent(in)    :: comm
     character(*)   , intent(in)    :: buffer
@@ -159,6 +163,9 @@ contains
   end function mpiio_message
   
   function     mpiio_open_read(comm,unit,name) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(in)  :: comm
     integer(int32), intent(out) :: unit
@@ -186,6 +193,9 @@ contains
   end function mpiio_open_read 
   
   function     mpiio_open_write(comm,unit,name) result(iErr)    
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(in)  :: comm
     integer(int32), intent(out) :: unit
@@ -216,6 +226,9 @@ contains
   end function mpiio_open_write 
   
   function     mpiio_close(unit) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(inout) :: unit
     integer(int32)                :: iErr
@@ -236,7 +249,10 @@ contains
   
   !>>>         mpiio_global_read
   function     mpiio_global_read_string(comm, unit, offset, data) result(iErr)
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
     integer(MPI_OFFSET_KIND), intent(inout) :: offset
@@ -292,6 +308,9 @@ contains
   end function mpiio_global_read_string
   
   function     mpiio_global_read_int32(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -335,6 +354,9 @@ contains
   end function mpiio_global_read_int32
 
   function     mpiio_global_read_int64(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -380,6 +402,9 @@ contains
   
   !>>>         mpiio_read_with_index
   function     mpiio_read_with_indx_int32(comm, unit, offset, data_indx, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -455,6 +480,9 @@ contains
   end function mpiio_read_with_indx_int32
   
   function     mpiio_read_with_indx_real64(comm, unit, offset, data_indx, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -531,6 +559,9 @@ contains
   end function mpiio_read_with_indx_real64
   
   function     mpiio_read_with_indx_complex128(comm, unit, offset, data_indx, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -609,6 +640,9 @@ contains
   
   !>>>         mpiio_read_block
   function     mpiio_read_block_int32(comm, unit, dimGlob, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -693,6 +727,9 @@ contains
   end function mpiio_read_block_int32
   
   function     mpiio_read_block_real64(comm, unit, dimGlob, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -778,6 +815,9 @@ contains
   end function mpiio_read_block_real64
   
   function     mpiio_read_block_complex128(comm, unit, dimGlob, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -867,6 +907,9 @@ contains
   !>>>         mpiio_global_write
   function     mpiio_global_write_string(comm, unit, offset, data) result(iErr)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
     integer(MPI_OFFSET_KIND), intent(inout) :: offset
@@ -921,6 +964,9 @@ contains
   end function mpiio_global_write_string
   
   function     mpiio_global_write_string_tab(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -974,6 +1020,9 @@ contains
   end function mpiio_global_write_string_tab
   
   function     mpiio_global_write_int32(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1025,6 +1074,9 @@ contains
   end function mpiio_global_write_int32
 
   function     mpiio_global_write_int64(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1180,6 +1232,9 @@ contains
   
 
   function     mpiio_write_with_indx_string(comm, unit, offset, data_indx, stride, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1246,6 +1301,9 @@ contains
 
 
   function     mpiio_write_with_indx_int32(comm, unit, offset, data_indx, stride, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1325,6 +1383,9 @@ contains
   end function mpiio_write_with_indx_int32
   
   function     mpiio_write_with_indx_int64(comm, unit, offset, data_indx, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1388,6 +1449,9 @@ contains
   end function mpiio_write_with_indx_int64
   
   function     mpiio_write_with_indx_real32(comm, unit, offset, data_indx, stride, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1451,6 +1515,9 @@ contains
   end function mpiio_write_with_indx_real32
   
   function     mpiio_write_with_indx_real64(comm, unit, offset, data_indx, stride, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1514,6 +1581,9 @@ contains
   end function mpiio_write_with_indx_real64
   
   function     mpiio_write_with_indx_complex128(comm, unit, offset, data_indx, stride, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1577,7 +1647,8 @@ contains
   end function mpiio_write_with_indx_complex128
   
   function     mpiio_write_with_indx_cptr(comm, unit, offset, data_indx, data_cptr, data_size) result(iErr)
-    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
     use iso_c_binding, only: c_ptr
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1644,6 +1715,9 @@ contains
   
   !>>>         mpiio_write_block
   function     mpiio_write_block_string(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1714,6 +1788,9 @@ contains
   end function mpiio_write_block_string
   
   function     mpiio_write_block_int32(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1784,6 +1861,9 @@ contains
   end function mpiio_write_block_int32
   
   function     mpiio_write_block_int64(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1854,6 +1934,9 @@ contains
   end function mpiio_write_block_int64
   
   function     mpiio_write_block_real32(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1925,6 +2008,9 @@ contains
   end function mpiio_write_block_real32
   
   function     mpiio_write_block_real64(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -1995,6 +2081,9 @@ contains
   end function mpiio_write_block_real64
   
   function     mpiio_write_block_complex128(comm, unit, offset, data) result(iErr)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32)          , intent(in)    :: comm
     integer(int32)          , intent(in)    :: unit
@@ -2132,6 +2221,9 @@ contains
   !end function mpiio_write_cptr
   
   subroutine to_nativen_int32(comm,val,be_val)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(in)    :: comm
     integer(int32), intent(in)    :: val
@@ -2147,6 +2239,9 @@ contains
   end subroutine to_nativen_int32
   
   subroutine     to_nativen_int32_tab(comm,val,be_val)
+    !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
+    use mpi
+    !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(in)    :: comm
     integer(int32), intent(in)    :: val   (:)
@@ -2172,6 +2267,7 @@ contains
   function        mpiio_part2block_real64(comm, data_indx,stride,data, dataBloc) result(t0)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     use iso_c_binding
+    use mpi
     !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     integer(int32), intent(in)  :: comm
@@ -2318,245 +2414,6 @@ contains
     return
   end function    mpiio_part2block_real64
   
-  
-  !function        mpiio_part2block_real64_test(comm, data_indx, stride, data, dataBloc) result(t0)
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  use mpi
-  !  use iso_c_binding
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
-  !  integer(int32), intent(in)     :: comm
-  !  integer(int64), intent(in)     :: data_indx(:)
-  !  real(real64),   intent(in)     :: data(:)
-  !  real(real64),   pointer        :: dataBloc(:)
-  !  real(real64)                   :: t0
-  !  
-  !  integer(int32)                 :: i,iErr
-  !  integer(int32)                 :: stride
-  !  integer(int64)                 :: dim, dimGlb
-  !  integer(int32)                 :: iRank, jRank, rankMPI, sizeMPI
-  !  integer(int64)                 :: taillePaquet  ! En 64 bits pour grands problèmes
-  !  
-  !  integer(int32), allocatable    :: send_counts(:), recv_counts(:)
-  !  integer(int32), allocatable    :: send_displs(:), recv_displs(:)  ! Restent à 0, gérés par types
-  !  integer(int32), allocatable    :: send_displs(:), recv_displs(:)  ! Restent à 0, gérés par types
-  !  
-  !  integer(int64), allocatable    :: send_data_indx(  :), recv_data_indx(  :)
-  !  real(real64)  , allocatable    :: send_data     (:,:), recv_data     (:,:)
-  !  integer(int32), allocatable    :: send_types(:), recv_types(:)
-  !  character(120)                 :: buffer
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
-  !  t0 = mpi_wtime()
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>        
-  !  !> Initialisation MPI
-  !  call MPI_Comm_rank(comm, rankMPI, iErr)
-  !  call MPI_Comm_size(comm, sizeMPI, iErr)
-  !  
-  !  block
-  !    integer :: len
-  !    call MPI_Get_library_version(buffer, len, iErr)
-  !    iErr=mpiio_message(comm=comm, buffer=buffer)
-  !  end block
-  !  
-  !  !> Initialisation de stride et de m
-  !  dim = size(data) / int(stride,kind=int64)
-  !  
-  !  write(buffer,'("mpiio_part2block stride:",i3)')stride
-  !  iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !
-  !  write(buffer,'("mpiio_part2block dim:",i3)')dim
-  !  iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  
-  !  !> Allocation des structures de communication
-  !  allocate(send_counts(0:sizeMPI-1), recv_counts(0:sizeMPI-1))
-  !  allocate(send_displs(0:sizeMPI-1), recv_displs(0:sizeMPI-1))
-  !  allocate(send_types (0:sizeMPI-1), recv_types (0:sizeMPI-1))
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  !> Étape 1 : Déterminer combien d'éléments chaque processus doit envoyer et recevoir  
-  !  send_counts(:) = 0
-  !  recv_counts(:) = 0
-  !  
-  !  call MPI_AllReduce(dim, dimGlb, 1, MPI_INTEGER8, MPI_SUM, comm, iErr)
-  !  write(buffer,'("mpiio_part2block dimGlb:",i3)')dimGlb
-  !  iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  
-  !  taillePaquet=(dimGlb/sizeMPI)
-  !  write(buffer,'("mpiio_part2block taillePaquet:",i3)')taillePaquet
-  !  iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  
-  !  do i=1,dim
-  !    jRank = min((data_indx(i)-1)/taillePaquet, int(sizeMPI-1,kind=int64)) !> Détermination du proc cible
-  !    send_counts(jRank) = send_counts(jRank) + 1
-  !  enddo
-  !  write(buffer,'("mpiio_part2block send_counts:",*(i3,1x) )')send_counts(:)
-  !  iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  !> Étape 2 : Échange des tailles avec MPI_Alltoall
-  !  
-  !  call MPI_Alltoall(send_counts, 1, MPI_INTEGER, recv_counts, 1, MPI_INTEGER, comm, iErr)
-  !  
-  !  write(buffer,'("mpiio_part2block recv_counts:",*(i3,1x) )')recv_counts(:)
-  !  iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  !> Étape 3 : Calcul des décalages pour MPI_Alltoallvw
-  !  send_displs(:) = 0 !> Déplacements à 0, offsets gérés par types dérivés
-  !  recv_displs(:) = 0 !> Déplacements à 0, offsets gérés par types dérivés
-  !  
-  !  do iRank = 1, sizeMPI-1
-  !    send_displs(iRank) = send_displs(iRank-1) + send_counts(iRank-1)
-  !    recv_displs(iRank) = recv_displs(iRank-1) + recv_counts(iRank-1)
-  !  enddo    
-  !  
-  !  write(buffer,'("mpiio_part2block send_displs:",*(i3,1x) )')send_displs(:) ; iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  write(buffer,'("mpiio_part2block recv_displs:",*(i3,1x) )')recv_displs(:) ; iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  !> Étape 4 : Allocation des buffers de communication
-  !  allocate(send_data     (1:stride,1:sum(int(send_counts,kind=int64)))) ! Stockage colonne-major (entrelacement des données)
-  !  allocate(send_data_indx(         1:sum(int(send_counts,kind=int64))))
-  !  
-  !  allocate(recv_data     (1:stride, 1:sum(int(recv_counts,kind=int64)))) ! Stockage colonne-major (entrelacement des données)
-  !  allocate(recv_data_indx(          1:sum(int(recv_counts,kind=int64))))
-  !  
-  !  !> Organisation des données à envoyer
-  !  if (rankMPI == 0) print '()'
-  !  do i=1,dim
-  !    !jRank = min((data_indx(i)-1) / taillePaquet, int(sizeMPI-1,kind=int64))
-  !    jRank = min((data_indx(i)-1) / taillePaquet, sizeMPI-1)
-  !    send_data     (1:stride,send_displs(jRank)+1) = data     (stride*(i-1)+1:stride*i)!> Transfert de colonnes complètes
-  !    send_data_indx(         send_displs(jRank)+1) = data_indx(i)
-  !    
-  !    send_displs(jRank)=send_displs(jRank)+1
-  !  enddo
-  !  
-  !  !> Réinitialisation des send_displs
-  !  send_displs(0)=0
-  !  do iRank =1,sizeMPI-1
-  !    send_displs(iRank)=send_displs(iRank-1)+stride*send_counts(iRank-1)
-  !  enddo
-  !  
-  !  recv_displs(0)=0
-  !  do iRank=1,sizeMPI-1
-  !    recv_displs(iRank)=recv_displs(iRank-1)+stride*recv_counts(iRank-1)
-  !  enddo    
-  !  
-  !  !> Création des types dérivés pour send_data (real64)
-  !  do iRank=0,sizeMPI-1
-  !    call MPI_Type_create_hindexed(1, [stride * send_counts(iRank)],[send_displs(iRank) * 8_MPI_ADDRESS_KIND],mpi_real8, send_types(iRank), iErr)
-  !    call MPI_Type_commit(send_types(iRank), iErr)
-  !  enddo
-  !  
-  !  do iRank=0,sizeMPI-1
-  !    call MPI_Type_create_hindexed(1, [stride * recv_counts(iRank)],[recv_displs(iRank) * 8_MPI_ADDRESS_KIND],mpi_real8, recv_types(iRank), iErr)
-  !    call MPI_Type_commit(recv_types(iRank), iErr)
-  !  enddo
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !          
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  !> Étape 5 : Communication des données avec MPI_Alltoallw
-  !  
-  !  write(buffer,'("mpiio_part2block_test coucou0")') ; iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  
-  !  call MPI_Alltoallw(                                   &
-  !  &    send_data, send_counts, send_displs, send_types, &
-  !  &    recv_data, recv_counts, recv_displs, recv_types, &
-  !  &    comm, iErr                                       )
-  !  
-  !  !> Libération des types pour real64
-  !  do iRank=0,sizeMPI-1
-  !    if (send_counts(iRank)>0 .or. recv_counts(iRank)>0 )then  ! Vérifie si le type a été utilisé      
-  !      call MPI_Type_free(send_types(iRank), iErr)
-  !      call MPI_Type_free(recv_types(iRank), iErr)
-  !    endif
-  !  enddo
-  !  
-  !  write(buffer,'("mpiio_part2block_test coucou1")') ; iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  
-  !  !> Création des types dérivés pour send_data_indx (int64)
-  !  do iRank=0,sizeMPI-1
-  !    call MPI_Type_create_hindexed(1,[send_counts(iRank)],[send_displs(iRank) * 8_MPI_ADDRESS_KIND],MPI_INTEGER8,send_types(iRank),iErr)
-  !    call MPI_Type_commit(send_types(iRank), iErr)
-  !  enddo
-  !  
-  !  do iRank=0,sizeMPI-1
-  !    call MPI_Type_create_hindexed(1,[recv_counts(iRank)],[recv_displs(iRank) * 8_MPI_ADDRESS_KIND],MPI_INTEGER8,recv_types(iRank),iErr)
-  !    call MPI_Type_commit(recv_types(iRank), iErr)
-  !  enddo
-  !  
-  !  write(buffer,'("mpiio_part2block_test coucou2")') ; iErr=mpiio_message(comm=comm, buffer=buffer)
-  !  
-  !  !> Réinitialisation des send_displs
-  !  !send_displs(0)=0
-  !  !do iRank =1,sizeMPI-1
-  !  !  send_displs(iRank)=send_displs(iRank-1)+send_counts(iRank-1)
-  !  !enddo
-  !  !
-  !  !recv_displs(0)=0
-  !  !do iRank=1,sizeMPI-1
-  !  !  recv_displs(iRank)=recv_displs(iRank-1)+recv_counts(iRank-1)
-  !  !enddo    
-  !
-  !  !> Communication des indices avec MPI_Alltoallw (int64)
-  !  call MPI_Alltoallw(                                        &
-  !  &    send_data_indx, send_counts, send_displs, send_types, &
-  !  &    recv_data_indx, recv_counts, recv_displs, recv_types, &
-  !  &    comm, iErr                                            )
-  !  
-  !  !> Libération des types pour real64
-  !  do iRank=0,sizeMPI-1
-  !    if (send_counts(iRank)>0 .or. recv_counts(iRank)>0 )then  ! Vérifie si le type a été utilisé      
-  !      call MPI_Type_free(send_types(iRank), iErr)
-  !      call MPI_Type_free(recv_types(iRank), iErr)
-  !    endif
-  !  enddo
-  !  
-  !  write(buffer,'("mpiio_part2block_test coucou3")') ; iErr=mpiio_message(comm=comm, buffer=buffer)  
-  !  
-  !  !do iRank=0,sizeMPI-1
-  !  !  if( iRank==rankMPI )then
-  !  !    print '(/"rank",i3)',rankMPI
-  !  !    do i=1,dim
-  !  !      print '(3x,"recv_data_indx(:,",i4")=",i4)',i,recv_data_indx(i)
-  !  !    enddo
-  !  !  endif
-  !  !  call mpi_barrier(comm,iErr)
-  !  !enddo  
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  ! Étape 6 : Tri local des données suivant data_indx
-  !  !allocate(dataBloc(1:stride * sum(int(recv_counts, int64))))
-  !  allocate(dataBloc(1:stride*sum(recv_counts))) 
-  !  
-  !  block
-  !    integer(int64) :: j, minData_indx  ! j et minData_indx en 64 bits
-  !    minData_indx = minval(recv_data_indx)
-  !    do i = 1, size(recv_data, 2)
-  !      j = recv_data_indx(i) - minData_indx + 1
-  !      dataBloc(stride*(j-1)+1:stride*j) = recv_data(1:stride, i)
-  !    enddo
-  !  end block
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  !  !> Nettoyage  
-  !  deallocate(send_data, send_counts, send_displs)
-  !  deallocate(recv_data, recv_counts, recv_displs)
-  !  deallocate(send_data_indx, recv_data_indx)
-  !  deallocate(send_types, recv_types)
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  
-  !  t0=mpi_wtime()-t0
-  !  !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  !  return
-  !end function mpiio_part2block_real64_test
-
-
   function mpiio_part2block_real64_test(comm, data_indx, stride, data, dataBloc) result(t0)
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     use mpi
